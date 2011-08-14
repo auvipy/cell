@@ -8,7 +8,7 @@ from copy import copy
 from itertools import count
 from operator import itemgetter
 
-from kombu import Consumer, Exchange, Queue
+from kombu import Exchange, Queue
 from kombu.utils import cached_property, kwdict, reprcall, reprkwargs
 from kombu.utils.encoding import safe_repr
 
@@ -175,9 +175,9 @@ class Actor(object):
         :keyword retry: If set to true then message sending will be retried
           in the event of connection failures. Default is decided by the
           :attr:`retry` attributed.
-        :keyword retry_policy: Override retry policies. See :attr:`retry_policy`.
-           This must be a dictionary, and keys will be merged with the default
-           retry policy.
+        :keyword retry_policy: Override retry policies.
+           See :attr:`retry_policy`.  This must be a dictionary, and keys will
+           be merged with the default retry policy.
         :keyword timeout: Timeout to wait for replies in seconds as a float
            (**only relevant in blocking mode**).
         :keyword limit: Limit number of replies to wait for
@@ -224,7 +224,7 @@ class Actor(object):
         exchange = self.exchange
         _retry_policy = self.retry_policy
         if retry_policy:  # merge default and custom policies.
-            _retry_policy = dict(_reply_policy, **reply_policy)
+            _retry_policy = dict(_retry_policy, **retry_policy)
 
         if type:
             props.setdefault("routing_key", self.type_to_rkey[type])
@@ -299,12 +299,12 @@ class Actor(object):
 
     def lookup_action(self, name):
         try:
-            act = getattr(self.actions, name)
+            method = getattr(self.methods, name)
         except AttributeError:
             raise KeyError(name)
-        if not callable(act) or name.startswith("_"):
+        if not callable(method) or name.startswith("_"):
             raise KeyError(method)
-        return act
+        return method
 
     def _DISPATCH(self, body, ticket=None):
         """Dispatch message to the appropriate method

@@ -8,10 +8,8 @@ from functools import partial
 from itertools import count
 
 from kombu import Consumer
-from kombu.utils import cached_property
 
 from cl.log import LogMixin
-from cl.common import drain_events
 
 
 class ConsumerMixin(LogMixin):

@@ -11,14 +11,11 @@ class GreetingActor(Actor):
 
         def greet(self, who="world"):
             return "Hello %s" % who
-
 greeting = GreetingActor(connection)
-
 
 
 class GreetingAgent(Agent):
     actors = [greeting]
-
 
 
 if __name__ == "__main__":

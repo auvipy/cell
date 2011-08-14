@@ -1,5 +1,6 @@
 """cl.agents"""
 
+from cl.common import uuid
 from cl.consumers import ConsumerMixin
 
 

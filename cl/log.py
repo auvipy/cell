@@ -1,5 +1,4 @@
 import logging
-import sys
 
 from kombu.utils import cached_property
 from kombu.utils.encoding import safe_str
@@ -30,4 +29,3 @@ class LogMixin(object):
     @property
     def logger_name(self):
         return self.__class__.__name__
-

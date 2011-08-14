@@ -20,21 +20,13 @@ def maybe_declare(entity, channel):
         _declared_entities.add(entity)
 
 
-def drain_events(connection, *args, **kwargs):
-    try:
-        connection.drain_events(*args, **kwargs)
-    except socket.timeout:
-        pass
-    except socket.error:
-        raise
-
-
 def itermessages(conn, channel, queue, limit=1, timeout=None, **kwargs):
     acc = deque()
+
     def on_message(body, message):
         acc.append((body, message))
 
-    with Consumer(channel, [queue], callbacks=[on_reply], **kwargs):
+    with Consumer(channel, [queue], callbacks=[on_message], **kwargs):
         for i in limit and xrange(limit) or count():
             try:
                 conn.drain_events(timeout=timeout)
@@ -56,10 +48,10 @@ def send_reply(self, conn, exchange, req, msg, **props):
                     **props))
 
 
-def collect_replies(conn, channel, *args, **kwargs):
+def collect_replies(conn, channel, queue, *args, **kwargs):
     no_ack = kwargs.setdefault("no_ack", True)
     received = False
-    for body, message in itermessages(conn, channel, *args, **kwargs):
+    for body, message in itermessages(conn, channel, queue, *args, **kwargs):
         if not no_ack:
             message.ack()
         received = True

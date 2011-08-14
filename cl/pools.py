@@ -1,3 +1,5 @@
+from itertools import chain
+
 from kombu.pools import ProducerPool
 
 _limit = [100]
@@ -10,6 +12,7 @@ class Connections(dict):
         return k
 connections = Connections()
 
+
 class Producers(dict):
 
     def __missing__(self, conn):
@@ -19,8 +22,6 @@ producers = Producers()
 
 
 def _all_pools():
-    c = connections.itervalues() if connections else iter([])
-    p = producers.itervalues() if producers else iter([])
     return chain(connections.itervalues() if connections else iter([]),
                  producers.itervalues() if producers else iter([]))
 
