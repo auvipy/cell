@@ -7,6 +7,7 @@ from itertools import count
 
 from kombu import Consumer
 
+from kombu import serialization
 from kombu.utils import gen_unique_id as uuid   # noqa
 
 from cl.pools import producers
@@ -39,12 +40,15 @@ def itermessages(conn, channel, queue, limit=1, timeout=None, **kwargs):
                     pass
 
 
-def send_reply(self, conn, exchange, req, msg, **props):
+def send_reply(conn, exchange, req, msg, **props):
     with producers[conn].acquire(block=True) as producer:
-        maybe_declare(self.reply_exchange, producer.channel)
+        content_type = req.properties["content_type"]
+        serializer = serialization.registry.type_to_name[content_type]
+        maybe_declare(exchange, producer.channel)
         producer.publish(msg, exchange=exchange,
             **dict({"routing_key": req.properties["reply_to"],
-                    "correlation_id": req.properties.get("correlation_id")},
+                    "correlation_id": req.properties.get("correlation_id"),
+                    "serializer": serializer},
                     **props))
 
 

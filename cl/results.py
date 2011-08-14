@@ -3,6 +3,7 @@
 from __future__ import absolute_import, with_statement
 
 from cl.exceptions import clError, NoReplyError
+from cl.pools import producers
 
 
 class AsyncResult(object):
@@ -24,16 +25,17 @@ class AsyncResult(object):
         return self._first(self.gather(**dict(kwargs, limit=1)))
 
     def gather(self, limit=None, timeout=2, propagate=False, **kwargs):
+        connection = self.actor.connection
         gather = self._gather
-        producers = self.actor.producers
-        with producers.acquire(block=True) as producer:
+        with producers[connection].acquire(block=True) as producer:
             for r in gather(producer.connection, producer.channel, self.ticket,
                             limit=limit, propagate=propagate,
                             timeout=timeout, **kwargs):
                 yield r
 
     def _gather(self, *args, **kwargs):
-        return (self.to_python(reply, propagate=kwargs.pop("propagate", False))
+        propagate=kwargs.pop("propagate", False)
+        return (self.to_python(reply, propagate=propagate)
                     for reply in self.actor._collect_replies(*args, **kwargs))
 
     def to_python(self, reply, propagate=False):

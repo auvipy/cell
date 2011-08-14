@@ -8,7 +8,7 @@ from copy import copy
 from itertools import count
 from operator import itemgetter
 
-from kombu import Exchange, Queue
+from kombu import Consumer, Exchange, Queue
 from kombu.utils import cached_property, kwdict, reprcall, reprkwargs
 from kombu.utils.encoding import safe_repr
 
@@ -20,6 +20,11 @@ from cl.pools import producers
 
 
 builtin_fields = {"ver": __version__}
+
+
+class Next(Exception):
+    """Used in a gather scenario to signify that no reply should be sent,
+    to give another agent the chance to reply."""
 
 
 class ActorType(type):
@@ -40,6 +45,7 @@ class Actor(object):
     AsyncResult = AsyncResult
 
     Error = clError
+    Next = Next
     NoReplyError = NoReplyError
 
     #: Actor name.
@@ -58,6 +64,9 @@ class Actor(object):
     #:     * scatter
     #:         Send the message to all of the agents (broadcast).
     types = ("direct", )
+
+    #: Default serializer used to send messages and reply messages.
+    serializer = "json"
 
     #: Default timeout in seconds as a float which after
     #: we give up waiting for replies.
@@ -105,16 +114,19 @@ class Actor(object):
         self.methods = self.construct_methods()
         self.logger = logger or logging.getLogger("Actor{%s}" % self.name)
         self.type_to_queue = {"direct": self.get_direct_queue,
-                              "rr": self.get_rr_queue,
+                              "round-robin": self.get_rr_queue,
                               "scatter": self.get_scatter_queue}
         if self.default_fields is None:
             self.default_fields = {}
+        if not self.exchange:
+            self.exchange = Exchange("cl.%s" % (self.name, ), "direct",
+                                     auto_delete=True)
 
     def construct_methods(self):
         """Instantiates the methods class of this actor."""
         return self.methods()
 
-    def direct(self, method, args, to, nowait=False, **kwargs):
+    def send(self, method, args={}, to="", nowait=False, **kwargs):
         """Call method on agent listening to ``routing_key``.
 
         See :method:`call_or_cast` for a full list of supported
@@ -129,7 +141,7 @@ class Actor(object):
         if not nowait:
             return r.get()
 
-    def rr(self, method, args, nowait=False, **kwargs):
+    def throw(self, method, args={}, nowait=False, **kwargs):
         """Call method on one of the agents in round robin.
 
         See :method:`call_or_cast` for a full list of supported
@@ -144,7 +156,7 @@ class Actor(object):
         if not nowait:
             return r.get()
 
-    def scatter(self, method, args, nowait=False, **kwargs):
+    def scatter(self, method, args={}, nowait=False, **kwargs):
         """Broadcast method to all agents.
 
         In this context the reply limit is disabled, and the timeout
@@ -200,11 +212,13 @@ class Actor(object):
 
     def get_scatter_queue(self):
         return Queue(self.id + ".scatter", self.exchange,
-                     routing_key=self.type_to_rkey["scatter"])
+                     routing_key=self.type_to_rkey["scatter"],
+                     auto_delete=True)
 
     def get_rr_queue(self):
         return Queue(self.exchange.name + ".rr", self.exchange,
-                     routing_key=self.type_to_rkey["round-robin"])
+                     routing_key=self.type_to_rkey["round-robin"],
+                     auto_delete=True)
 
     def get_reply_queue(self, ticket):
         return Queue(ticket, self.reply_exchange, ticket, auto_delete=True,
@@ -213,8 +227,8 @@ class Actor(object):
 
     def Consumer(self, channel, **kwargs):
         """Returns a :class:`kombu.Consumer` instance for this Actor."""
-        return self.Consumer(channel, self.get_queues(),
-                             callbacks=[self.on_message], **kwargs)
+        return Consumer(channel, self.get_queues(),
+                        callbacks=[self.on_message], **kwargs)
 
     def cast(self, method, args={}, before=None, retry=None,
             retry_policy=None, type=None, **props):
@@ -228,6 +242,7 @@ class Actor(object):
 
         if type:
             props.setdefault("routing_key", self.type_to_rkey[type])
+        props.setdefault("serializer", self.serializer)
 
         with producers[self._connection].acquire(block=True) as producer:
             p = producer.publish
@@ -256,8 +271,13 @@ class Actor(object):
 
     def handle_call(self, body, message):
         """Handle call message."""
-        self.reply(message,
-                   self._DISPATCH(body, ticket=message.properties["reply_to"]))
+        try:
+            r = self._DISPATCH(body, ticket=message.properties["reply_to"])
+        except self.Next:
+            # don't reply, delegate to other agent.
+            pass
+        else:
+            self.reply(message, r)
 
     def reply(self, req, body, **props):
         return send_reply(self._connection, self.reply_exchange,
@@ -343,6 +363,8 @@ class Actor(object):
             act = self.lookup_action(method)
             r = {"ok": act(**kwdict(args or {}))}
             self.logger.info("{%s} <-- %s", ticket, reprkwargs(r))
+        except self.Next:
+            raise
         except Exception, exc:
             einfo = sys.exc_info()
             r = {"nok": [safe_repr(exc), self._get_traceback(einfo)]}

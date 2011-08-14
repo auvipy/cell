@@ -1,4 +1,6 @@
 """cl.agents"""
+import sys
+import logging
 
 from cl.common import uuid
 from cl.consumers import ConsumerMixin
@@ -13,6 +15,13 @@ class Agent(ConsumerMixin):
         if actors is not None:
             self.actors = actors
         self.actors = self.prepare_actors()
+
+    def run_from_commandline(self):
+        logger = logging.getLogger()
+        if not logger.handlers:
+            logger.addHandler(logging.StreamHandler(sys.stderr))
+            logger.setLevel(logging.INFO)
+        self.run()
 
     def prepare_actors(self):
         return [actor.bind(self.connection) for actor in self.actors]

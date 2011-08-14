@@ -19,7 +19,7 @@ class LogMixin(object):
         return self._log(logging.ERROR, *args, **kwargs)
 
     def _log(self, severity, *args, **kwargs):
-        body = "{%s} %s" % (self.name, " ".join(map(safe_str, args)))
+        body = "{%s} %s" % (self.logger_name, " ".join(map(safe_str, args)))
         return self.logger.log(severity, body, **kwargs)
 
     @cached_property

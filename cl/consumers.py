@@ -1,3 +1,4 @@
+"""cl.consumers"""
 from __future__ import absolute_import, with_statement
 
 import socket
@@ -10,6 +11,8 @@ from itertools import count
 from kombu import Consumer
 
 from cl.log import LogMixin
+
+__all__ = ["ConsumerMixin"]
 
 
 class ConsumerMixin(LogMixin):
@@ -56,11 +59,16 @@ class ConsumerMixin(LogMixin):
                                    self.connect_max_retries)
             self.on_connection_revived()
             self.info("Connected to %s" % (conn.as_uri(), ))
-            with conn.channel() as channel:
+            channel = conn.channel()
+            channel = channel.__enter__()
+            consumers = self.get_consumers(partial(Consumer, channel), channel)
+            try:
                 with self._consume_from(
                         *self.get_consumers(partial(Consumer, channel),
                                             channel)):
                             yield conn, channel
+            finally:
+                channel.__exit__(*sys.exc_info())
 
     @contextmanager
     def _consume_from(self, *consumers):
