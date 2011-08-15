@@ -6,7 +6,7 @@ from itertools import chain
 
 from kombu.pools import ProducerPool
 
-__all__ ["connections", "producers", "set_limit", "reset"]
+__all__ = ["connections", "producers", "set_limit", "reset"]
 _limit = [100]
 
 
