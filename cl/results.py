@@ -2,8 +2,10 @@
 
 from __future__ import absolute_import, with_statement
 
-from cl.exceptions import clError, NoReplyError
-from cl.pools import producers
+from .exceptions import clError, NoReplyError
+from .pools import producers
+
+__all__ = ["AsyncResult"]
 
 
 class AsyncResult(object):

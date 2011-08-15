@@ -1,5 +1,8 @@
 """cl.exceptions"""
+
 from __future__ import absolute_import
+
+__all__ = ["clError", "NoReplyError", "NotBoundError"]
 
 FRIENDLY_ERROR_FMT = """
 Remote method raised exception:

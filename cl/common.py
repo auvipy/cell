@@ -1,3 +1,5 @@
+"""cl.common"""
+
 from __future__ import absolute_import, with_statement
 
 import socket
@@ -6,12 +8,12 @@ from collections import deque
 from itertools import count
 
 from kombu import Consumer
-
 from kombu import serialization
 from kombu.utils import gen_unique_id as uuid   # noqa
 
-from cl.pools import producers
+from .pools import producers
 
+__all__ = ["maybe_declare", "itermessages", "send_reply", "collect_replies"]
 _declared_entities = set()
 
 

@@ -97,5 +97,8 @@ setup(
         "Topic :: System :: Networking",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
+    entry_points={
+        "console_scripts": ["cl = cl.bin.cl:main"],
+    },
     long_description=long_description,
     **extra)

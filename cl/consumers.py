@@ -1,4 +1,5 @@
 """cl.consumers"""
+
 from __future__ import absolute_import, with_statement
 
 import socket
@@ -10,7 +11,7 @@ from itertools import count
 
 from kombu import Consumer
 
-from cl.log import LogMixin
+from .log import LogMixin
 
 __all__ = ["ConsumerMixin"]
 

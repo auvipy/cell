@@ -1,3 +1,5 @@
+"""cl.actors"""
+
 from __future__ import absolute_import, with_statement
 
 import logging
@@ -12,13 +14,13 @@ from kombu import Consumer, Exchange, Queue
 from kombu.utils import cached_property, kwdict, reprcall, reprkwargs
 from kombu.utils.encoding import safe_repr
 
-from cl import __version__
-from cl.common import collect_replies, maybe_declare, send_reply, uuid
-from cl.exceptions import clError, NoReplyError
-from cl.results import AsyncResult
-from cl.pools import producers
+from . import __version__
+from .common import collect_replies, maybe_declare, send_reply, uuid
+from .exceptions import clError, NoReplyError
+from .results import AsyncResult
+from .pools import producers
 
-
+__all__ = ["Actor", "Next"]
 builtin_fields = {"ver": __version__}
 
 

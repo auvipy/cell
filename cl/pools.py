@@ -1,24 +1,29 @@
+"""cl.pools"""
+
+from __future__ import absolute_import
+
 from itertools import chain
 
 from kombu.pools import ProducerPool
 
+__all__ ["connections", "producers", "set_limit", "reset"]
 _limit = [100]
 
 
-class Connections(dict):
+class _Connections(dict):
 
     def __missing__(self, connection):
         k = self[connection] = connection.Pool(_limit[0])
         return k
-connections = Connections()
+connections = _Connections()
 
 
-class Producers(dict):
+class _Producers(dict):
 
     def __missing__(self, conn):
         k = self[conn] = ProducerPool(connections[conn], limit=_limit[0])
         return k
-producers = Producers()
+producers = _Producers()
 
 
 def _all_pools():
@@ -41,8 +46,8 @@ def reset():
             pool.force_close_all()
         except Exception:
             pass
-    connections = Connections()
-    producers.Producers()
+    connections = _Connections()
+    producers._Producers()
 
 
 try:

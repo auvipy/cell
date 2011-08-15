@@ -1,9 +1,15 @@
 """cl.agents"""
+
+from __future__ import absolute_import
+
 import sys
 import logging
 
-from cl.common import uuid
-from cl.consumers import ConsumerMixin
+from .common import uuid
+from .consumers import ConsumerMixin
+from .log import setup_logger
+
+__all__ = ["Agent"]
 
 
 class Agent(ConsumerMixin):
@@ -17,18 +23,16 @@ class Agent(ConsumerMixin):
         self.actors = self.prepare_actors()
 
     def run(self):
-        self.info("Agent starting...")
-        self.info("acts for %r" % ([actor.name for actor in self.actors], ))
+        self.info("Agent on behalf of [%s] starting..." % (
+            ", ".join(actor.name for actor in self.actors), ))
+        super(Agent, self).run()
 
-    def run_from_commandline(self):
-        logger = logging.getLogger()
-        if not logger.handlers:
-            logger.addHandler(logging.StreamHandler(sys.stderr))
-            logger.setLevel(logging.INFO)
+    def run_from_commandline(self, loglevel=None, logfile=None):
+        setup_logger(loglevel, logfile)
         try:
             self.run()
         except KeyboardInterrupt:
-            logger.info("[Quit requested by user]")
+            self.info("[Quit requested by user]")
 
     def prepare_actors(self):
         return [actor.bind(self.connection) for actor in self.actors]
