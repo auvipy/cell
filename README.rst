@@ -62,3 +62,8 @@ License
 
 This software is licensed under the `New BSD License`. See the `LICENSE`
 file in the top distribution directory for the full license text.
+
+Copyright
+=========
+
+Copyright (C) 2011 Vmware, Inc.
