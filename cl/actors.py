@@ -102,7 +102,7 @@ class Actor(object):
                     "round-robin": "__rr__",
                     "scatter": "__scatter__"}
 
-    class methods:
+    class state:
         pass
 
     def __init__(self, connection=None, id=None, name=None, exchange=None,
@@ -111,7 +111,7 @@ class Actor(object):
         self.id = id or uuid()
         self.name = name or self.name or self.__class__.__name__
         self.exchange = exchange or self.exchange
-        self.methods = self.construct_methods()
+        self.state = self.construct_state()
         self.logger = logger or logging.getLogger("Actor{%s}" % self.name)
         self.type_to_queue = {"direct": self.get_direct_queue,
                               "round-robin": self.get_rr_queue,
@@ -122,9 +122,9 @@ class Actor(object):
             self.exchange = Exchange("cl.%s" % (self.name, ), "direct",
                                      auto_delete=True)
 
-    def construct_methods(self):
-        """Instantiates the methods class of this actor."""
-        return self.methods()
+    def construct_state(self):
+        """Instantiates the state class of this actor."""
+        return self.state()
 
     def send(self, method, args={}, to="", nowait=False, **kwargs):
         """Call method on agent listening to ``routing_key``.
@@ -319,7 +319,7 @@ class Actor(object):
 
     def lookup_action(self, name):
         try:
-            method = getattr(self.methods, name)
+            method = getattr(self.state, name)
         except AttributeError:
             raise KeyError(name)
         if not callable(method) or name.startswith("_"):
@@ -328,7 +328,7 @@ class Actor(object):
 
     def _DISPATCH(self, body, ticket=None):
         """Dispatch message to the appropriate method
-        in :attr:`methods`, handle possible exceptions,
+        in :attr:`state`, handle possible exceptions,
         and return a response suitable to be used in a reply.
 
         To protect from calling special methods it does not dispatch

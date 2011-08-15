@@ -7,7 +7,7 @@ connection = Connection()
 
 class GreetingActor(Actor):
 
-    class methods:
+    class state:
 
         def greet(self, who="world"):
             return "Hello %s" % who
@@ -19,7 +19,7 @@ class GreetingAgent(Agent):
 
 
 if __name__ == "__main__":
-    GreetingAgent(connection).run()
+    GreetingAgent(connection).run_from_commandline()
 
 
 # Run this script from the command line and try this

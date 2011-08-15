@@ -15,7 +15,7 @@ class Cache(Actor, DictMixin):
     types = ("scatter", "round-robin")
     default_timeout = 1
 
-    class methods(object):
+    class state(object):
 
         def __init__(self, data=None):
             self.data = {}
