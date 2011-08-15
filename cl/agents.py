@@ -16,12 +16,19 @@ class Agent(ConsumerMixin):
             self.actors = actors
         self.actors = self.prepare_actors()
 
+    def run(self):
+        self.info("Agent starting...")
+        self.info("acts for %r" % ([actor.name for actor in self.actors], ))
+
     def run_from_commandline(self):
         logger = logging.getLogger()
         if not logger.handlers:
             logger.addHandler(logging.StreamHandler(sys.stderr))
             logger.setLevel(logging.INFO)
-        self.run()
+        try:
+            self.run()
+        except KeyboardInterrupt:
+            logger.info("[Quit requested by user]")
 
     def prepare_actors(self):
         return [actor.bind(self.connection) for actor in self.actors]

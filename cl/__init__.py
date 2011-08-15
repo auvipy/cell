@@ -2,7 +2,7 @@
 VERSION = (0, 0, 1)
 __version__ = ".".join(map(str, VERSION[0:3])) + "".join(VERSION[3:])
 __author__ = "Ask Solem"
-__contact__ = "ask@celeryproject.org"
+__contact__ = "ask@rabbitmq.com"
 __homepage__ = "http://github.com/ask/cl/"
 __docformat__ = "restructuredtext en"
 
