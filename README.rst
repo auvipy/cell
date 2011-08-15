@@ -7,7 +7,7 @@
 Synopsis
 ========
 
-`cl` (pronouced *cell*) is an actor framework for `Kombu`_.
+`cl` (pronounced *cell*) is an actor framework for `Kombu`_.
 
 .. _`Kombu`: http://pypi.python.org/pypi/kombu
 
@@ -66,4 +66,4 @@ file in the top distribution directory for the full license text.
 Copyright
 =========
 
-Copyright (C) 2011 Vmware, Inc.
+Copyright (C) 2011 VMware, Inc.
