@@ -26,7 +26,7 @@ class AsyncResult(object):
     def get(self, **kwargs):
         return self._first(self.gather(**dict(kwargs, limit=1)))
 
-    def gather(self, propagate=False, **kwargs):
+    def gather(self, propagate=True, **kwargs):
         connection = self.actor.connection
         gather = self._gather
         with producers[connection].acquire(block=True) as producer:
@@ -35,11 +35,11 @@ class AsyncResult(object):
                 yield r
 
     def _gather(self, *args, **kwargs):
-        propagate=kwargs.pop("propagate", False)
+        propagate=kwargs.pop("propagate", True)
         return (self.to_python(reply, propagate=propagate)
                     for reply in self.actor._collect_replies(*args, **kwargs))
 
-    def to_python(self, reply, propagate=False):
+    def to_python(self, reply, propagate=True):
         try:
             return reply["ok"]
         except KeyError:
