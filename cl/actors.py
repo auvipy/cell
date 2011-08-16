@@ -115,7 +115,7 @@ class Actor(object):
         self.name = name or self.name or self.__class__.__name__
         self.exchange = exchange or self.exchange
         self.agent = agent
-        self.state = self.construct_state()
+        self.state = self.contribute_to_state(self.construct_state())
         self.logger = logger or logging.getLogger("Actor{%s}" % self.name)
         self.type_to_queue = {"direct": self.get_direct_queue,
                               "round-robin": self.get_rr_queue,
@@ -129,6 +129,21 @@ class Actor(object):
     def construct_state(self):
         """Instantiates the state class of this actor."""
         return self.state()
+
+    def maybe_setattr(self, obj, attr, value):
+        if not hasattr(obj, attr):
+            setattr(obj, attr, value)
+
+    def contribute_to_object(self, obj, map):
+        for attr, value in map.iteritems():
+            self.maybe_setattr(obj, attr, value)
+        return obj
+
+    def contribute_to_state(self, state):
+        return self.contribute_to_object(state, {
+                    "Next": self.Next,
+                    "NoReplyError": self.NoReplyError})
+
 
     def send(self, method, args={}, to="", nowait=False, **kwargs):
         """Call method on agent listening to ``routing_key``.
@@ -221,7 +236,7 @@ class Actor(object):
         return Queue(self.id, self.exchange, auto_delete=True)
 
     def get_scatter_queue(self):
-        return Queue(self.id + ".scatter", self.exchange,
+        return Queue("%s.%s.scatter" % (self.name, self.id), self.exchange,
                      routing_key=self.type_to_rkey["scatter"],
                      auto_delete=True)
 
