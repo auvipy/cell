@@ -18,8 +18,11 @@ def force_list(obj):
 
 def flatten(it):
     if it:
-        return reduce(operator.add,
-                imap(force_list, ifilter(None, it)))
+        try:
+            return reduce(operator.add,
+                          imap(force_list, ifilter(None, it)))
+        except TypeError:
+            return []
     return it
 
 

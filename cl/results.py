@@ -26,13 +26,12 @@ class AsyncResult(object):
     def get(self, **kwargs):
         return self._first(self.gather(**dict(kwargs, limit=1)))
 
-    def gather(self, limit=None, timeout=2, propagate=False, **kwargs):
+    def gather(self, propagate=False, **kwargs):
         connection = self.actor.connection
         gather = self._gather
         with producers[connection].acquire(block=True) as producer:
             for r in gather(producer.connection, producer.channel, self.ticket,
-                            limit=limit, propagate=propagate,
-                            timeout=timeout, **kwargs):
+                            propagate=propagate, **kwargs):
                 yield r
 
     def _gather(self, *args, **kwargs):

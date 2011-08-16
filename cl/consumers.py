@@ -25,6 +25,10 @@ class ConsumerMixin(LogMixin):
     def on_connection_revived(self):
         pass
 
+    @contextmanager
+    def extra_context(self, connection, channel):
+        yield
+
     def run(self):
         while 1:
             try:
@@ -36,18 +40,19 @@ class ConsumerMixin(LogMixin):
 
     def consume(self, limit=None, timeout=None, safety_interval=1):
         elapsed = 0
-        with self.Consumer() as (connection, _):
-            for i in limit and xrange(limit) or count():
-                try:
-                    connection.drain_events(timeout=safety_interval)
-                except socket.timeout:
-                    elapsed += safety_interval
-                    if timeout and elapsed >= timeout:
-                        raise socket.timeout()
-                except socket.error:
-                    raise
-                else:
-                    elapsed = 0
+        with self.Consumer() as (connection, channel):
+            with self.extra_context(connection, channel):
+                for i in limit and xrange(limit) or count():
+                    try:
+                        connection.drain_events(timeout=safety_interval)
+                    except socket.timeout:
+                        elapsed += safety_interval
+                        if timeout and elapsed >= timeout:
+                            raise socket.timeout()
+                    except socket.error:
+                        raise
+                    else:
+                        elapsed = 0
 
     def on_connection_error(self, exc, interval):
         self.error("Broker connection error: %r. "

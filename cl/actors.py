@@ -16,7 +16,7 @@ from kombu.utils.encoding import safe_repr
 
 from . import __version__
 from .common import collect_replies, maybe_declare, send_reply, uuid
-from .exceptions import clError, NoReplyError
+from .exceptions import clError, NoReplyError, NotBoundError
 from .results import AsyncResult
 from .pools import producers
 
@@ -49,6 +49,7 @@ class Actor(object):
     Error = clError
     Next = Next
     NoReplyError = NoReplyError
+    NotBoundError = NotBoundError
 
     #: Actor name.
     #: Defaults to the defined class name.
@@ -108,11 +109,12 @@ class Actor(object):
         pass
 
     def __init__(self, connection=None, id=None, name=None, exchange=None,
-            logger=None, **kwargs):
+            logger=None, agent=None, **kwargs):
         self.connection = connection
         self.id = id or uuid()
         self.name = name or self.name or self.__class__.__name__
         self.exchange = exchange or self.exchange
+        self.agent = agent
         self.state = self.construct_state()
         self.logger = logger or logging.getLogger("Actor{%s}" % self.name)
         self.type_to_queue = {"direct": self.get_direct_queue,
@@ -172,10 +174,16 @@ class Actor(object):
         will block and return the replies.
 
         """
+        kwargs.setdefault("timeout", 2)
         r = self.call_or_cast(method, args, type="scatter",
                               nowait=nowait, **kwargs)
         if not nowait:
-            return r.gather()
+            return r.gather(**kwargs)
+
+    def get_default_scatter_limit(self):
+        if self.agent:
+            return self.agent.get_default_scatter_limit(self.name)
+        return None
 
     def call_or_cast(self, method, args={}, nowait=False, **kwargs):
         """Apply remote `method` asynchronously or synchronously depending
@@ -316,6 +324,8 @@ class Actor(object):
 
     def _collect_replies(self, conn, channel, ticket, *args, **kwargs):
         kwargs.setdefault("timeout", self.default_timeout)
+        if "limit" not in kwargs:
+            kwargs["limit"] = self.get_default_scatter_limit()
         return collect_replies(conn, channel, self.get_reply_queue(ticket),
                                *args, **kwargs)
 
@@ -379,9 +389,11 @@ class Actor(object):
     def _reprcall(self, method, args):
         return "%s.%s" % (self.name, reprcall(method, (), args))
 
-    def bind(self, connection):
+    def bind(self, connection, agent=None):
         o = copy(self)
         o.connection = connection
+        if agent:
+            o.agent = agent
         return o
 
     def is_bound(self):
