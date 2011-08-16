@@ -1,3 +1,7 @@
+"""scs.presence"""
+
+from __future__ import absolute_import, with_statement
+
 import warnings
 
 from time import time, sleep
@@ -30,10 +34,8 @@ class State(object):
         return able
 
     def on_message(self, body, message):
-        print("RECEIVED EVENT: %r" % (body, ))
         event = body["event"]
         self.handlers[event](**body)
-        print("AGENTS NOW: %r" % (self.agents, ))
 
     def when_online(self, agent=None, actors=None, ts=None, **kw):
         self._update_agent(agent, actors, ts)
@@ -61,7 +63,6 @@ class State(object):
         self._agents[agent] = {"actors": actors, "ts": ts}
 
     def _remove_agent(self, agent):
-        print("REMOVE AGENT: %r" % (agent, ))
         self._agents.pop(agent, None)
 
     @property
