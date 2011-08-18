@@ -24,6 +24,9 @@ class Agent(ConsumerMixin):
             self.actors = actors
         self.actors = self.prepare_actors()
 
+    def on_run(self):
+        pass
+
     def run(self):
         self.info("Agent on behalf of [%s] starting..." % (
             ", ".join(actor.name for actor in self.actors), ))

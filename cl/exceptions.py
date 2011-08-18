@@ -32,3 +32,7 @@ class NoReplyError(Exception):
 
 class NotBoundError(Exception):
     """Object is not bound to a connection."""
+
+
+class NoRouteError(Exception):
+    """Presence: No known route for wanted item."""

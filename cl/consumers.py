@@ -10,8 +10,10 @@ from functools import partial
 from itertools import count
 
 from kombu import Consumer
+from kombu.utils import cached_property
 
 from .log import LogMixin
+from .utils import TokenBucket
 
 __all__ = ["ConsumerMixin"]
 
@@ -32,7 +34,8 @@ class ConsumerMixin(LogMixin):
     def run(self):
         while 1:
             try:
-                self.consume(limit=None)
+                if self.restart_limit.can_consume(1):
+                    self.consume(limit=None)
             except self.connection.connection_errors:
                 self.error("Connection to broker lost. "
                            "Trying to re-establish the connection...",
@@ -40,7 +43,7 @@ class ConsumerMixin(LogMixin):
 
     def consume(self, limit=None, timeout=None, safety_interval=1):
         elapsed = 0
-        with self.Consumer() as (connection, channel):
+        with self.Consumer() as (connection, channel, consumers):
             with self.extra_context(connection, channel):
                 for i in limit and xrange(limit) or count():
                     try:
@@ -72,7 +75,7 @@ class ConsumerMixin(LogMixin):
                 with self._consume_from(
                         *self.get_consumers(partial(Consumer, channel),
                                             channel)):
-                            yield conn, channel
+                            yield conn, channel, consumers
             finally:
                 channel.__exit__(*sys.exc_info())
 
@@ -80,3 +83,10 @@ class ConsumerMixin(LogMixin):
     def _consume_from(self, *consumers):
         with nested(*consumers) as context:
             yield context
+
+    @cached_property
+    def restart_limit(self):
+        # the AttributeError that can be catched from amqplib
+        # poses problems for the too often restarts protection
+        # in Connection.ensure_connection
+        return TokenBucket(1)

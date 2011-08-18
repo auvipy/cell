@@ -17,6 +17,7 @@ from kombu.utils.encoding import safe_repr
 from . import __version__
 from .common import collect_replies, maybe_declare, send_reply, uuid
 from .exceptions import clError, NoReplyError, NotBoundError
+from .g import spawn
 from .results import AsyncResult
 from .pools import producers
 
@@ -104,6 +105,8 @@ class Actor(object):
     type_to_rkey = {"rr": "__rr__",
                     "round-robin": "__rr__",
                     "scatter": "__scatter__"}
+
+    meta = {}
 
     class state:
         pass
@@ -233,7 +236,8 @@ class Actor(object):
     def get_direct_queue(self):
         """Returns a unique queue that can be used to listen for messages
         to this class."""
-        return Queue(self.id, self.exchange, auto_delete=True)
+        return Queue(self.id, self.exchange, routing_key=self.routing_key,
+                     auto_delete=True)
 
     def get_scatter_queue(self):
         return Queue("%s.%s.scatter" % (self.name, self.id), self.exchange,
@@ -324,18 +328,21 @@ class Actor(object):
         else:
             handler = self.handle_cast
 
-        # Do not ack the message if an exceptional error occurs,
-        # but do ack the message if SystemExit or KeyboardInterrupt
-        # is raised, as this is probably intended.
-        try:
-            handler(body, message)
-        except Exception:
-            raise
-        except BaseException:
-            message.ack()
-            raise
-        else:
-            message.ack()
+        def handle():
+            # Do not ack the message if an exceptional error occurs,
+            # but do ack the message if SystemExit or KeyboardInterrupt
+            # is raised, as this is probably intended.
+            try:
+                handler(body, message)
+            except Exception:
+                raise
+            except BaseException:
+                message.ack()
+                raise
+            else:
+                message.ack()
+
+        handle()
 
     def _collect_replies(self, conn, channel, ticket, *args, **kwargs):
         kwargs.setdefault("timeout", self.default_timeout)
@@ -431,3 +438,7 @@ class Actor(object):
     @cached_property
     def _default_fields(self):
         return dict(builtin_fields, **self.default_fields)
+
+    @property
+    def routing_key(self):
+        return self.agent.id
