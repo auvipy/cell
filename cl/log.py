@@ -7,8 +7,9 @@ import sys
 
 from logging.handlers import WatchedFileHandler
 
-from kombu.utils import cached_property
 from kombu.utils.encoding import safe_str
+
+from .utils import cached_property
 
 __all__ = ["LogMixin", "LOG_LEVELS", "get_loglevel", "setup_logger"]
 

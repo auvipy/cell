@@ -2,7 +2,7 @@
 
 from __future__ import absolute_import
 
-__all__ = ["clError", "NoReplyError", "NotBoundError"]
+__all__ = ["clError", "Next", "NoReplyError", "NotBoundError"]
 
 FRIENDLY_ERROR_FMT = """
 Remote method raised exception:
@@ -23,6 +23,11 @@ class clError(Exception):
 
     def __str__(self):
         return FRIENDLY_ERROR_FMT % (self.traceback, )
+
+
+class Next(Exception):
+    """Used in a gather scenario to signify that no reply should be sent,
+    to give another agent the chance to reply."""
 
 
 class NoReplyError(Exception):

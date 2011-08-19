@@ -8,7 +8,10 @@ import time
 from importlib import import_module
 from itertools import imap, ifilter
 
-__all__ = ["force_list", "flatten", "get_cls_by_name", "instantiate"]
+from kombu.utils import cached_property  # noqa
+
+__all__ = ["force_list", "flatten", "get_cls_by_name",
+           "instantiate", "cached_property"]
 
 
 def force_list(obj):

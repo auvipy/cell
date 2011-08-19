@@ -5,29 +5,39 @@ from __future__ import absolute_import, with_statement
 import logging
 import warnings
 
-from time import time, sleep
+from collections import defaultdict
 from contextlib import contextmanager
+from functools import wraps
+from threading import Lock
+from time import time, sleep
 
 from kombu import Consumer, Exchange, Queue
-from kombu.utils import cached_property
 
 from .agents import Agent
 from .consumers import ConsumerMixin
 from .exceptions import NoRouteError
 from .g import spawn, timer
+from .log import LogMixin
 from .pools import producers
-from .utils import first_or_raise
+from .utils import cached_property, first_or_raise
 
 
-logger = logging.getLogger("cl.presence")
+class MockLock(object):
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, *exc_info):
+        pass
 
 
-class State(object):
+class State(LogMixin):
     heartbeat_expire = 20
+    logger_name = "cl.presence.state"
 
     def __init__(self, presence):
         self.presence = presence
-        self._agents = {}
+        self._agents = defaultdict(lambda: {})
         self.handlers = {"online": self.when_online,
                          "offline": self.when_offline,
                          "heartbeat": self.when_heartbeat,
@@ -42,6 +52,9 @@ class State(object):
 
     def meta_for(self, actor):
         return self._agents["meta"][actor]
+
+    def update_meta_for(self, agent, meta):
+        self._agents[agent].update(meta=meta)
 
     def agents_by_meta(self, predicate, *sections):
         for agent, state in self._agents.iteritems():
@@ -59,8 +72,8 @@ class State(object):
     def on_message(self, body, message):
         event = body["event"]
         self.handlers[event](**body)
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("presence: Agents now: %r" % (self.agents, ))
+        if self.logger.isEnabledFor(logging.DEBUG):
+            self.info("agents after event recv: %s" % (self.agents, ))
 
     def when_online(self, agent=None, **kw):
         self._update_agent(agent, kw)
@@ -84,11 +97,18 @@ class State(object):
             self._remove_agent(id)
         return self._agents
 
+    def update_agent(self, agent=None, **kw):
+        return self._update_agent(agent, kw)
+
     def _update_agent(self, agent, kw):
-        self._agents[agent] = dict(kw)
+        kw = dict(kw)
+        meta = kw.pop("meta", None)
+        if meta:
+            self._update_meta_for(agent, meta)
+        self._agents[agent].update(kw)
 
     def _remove_agent(self, agent):
-        self._agents.pop(agent, None)
+        self._agents[agent].clear()
 
     @property
     def agents(self):
@@ -163,10 +183,16 @@ class Presence(ConsumerMixin):
         return self.announce(self.create_event("offline"))
 
     def wakeup(self):
-        return self.announce(self.create_event("wakeup"))
+        event = self.create_event("wakeup")
+        self.state.update_agent(**event)
+        return self.announce(event)
 
     def can(self, actor):
         return self.state.can(actor)
+
+    @property
+    def logger_name(self):
+        return "Presence@%s" % (self.agent.id, )
 
 
 class AwareAgent(Agent):
@@ -213,3 +239,19 @@ class AwareActorMixin(object):
             return self.send(method, args, to=actor, **kwargs)
         return first_or_raise(self.scatter(method, args, **kwargs),
                               NoRouteError())
+
+    def wakeup_all_agents(self):
+        if self.agent:
+            self.logger.info("* Presence wakeup others")
+            self.agent.presence.wakeup()
+
+
+def announce_after(fun):
+
+    @wraps(fun)
+    def _inner(self, *args, **kwargs):
+        try:
+            return fun(self, *args, **kwargs)
+        finally:
+            self.actor.wakeup_all_agents()
+    return _inner

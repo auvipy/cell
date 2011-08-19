@@ -10,10 +10,9 @@ from functools import partial
 from itertools import count
 
 from kombu import Consumer
-from kombu.utils import cached_property
 
 from .log import LogMixin
-from .utils import TokenBucket
+from .utils import cached_property, TokenBucket
 
 __all__ = ["ConsumerMixin"]
 

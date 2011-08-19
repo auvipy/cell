@@ -11,23 +11,19 @@ from itertools import count
 from operator import itemgetter
 
 from kombu import Consumer, Exchange, Queue
-from kombu.utils import cached_property, kwdict, reprcall, reprkwargs
+from kombu.utils import kwdict, reprcall, reprkwargs
 from kombu.utils.encoding import safe_repr
 
 from . import __version__
+from . import exceptions
 from .common import collect_replies, maybe_declare, send_reply, uuid
-from .exceptions import clError, NoReplyError, NotBoundError
 from .g import spawn
 from .results import AsyncResult
 from .pools import producers
+from .utils import cached_property
 
-__all__ = ["Actor", "Next"]
+__all__ = ["Actor"]
 builtin_fields = {"ver": __version__}
-
-
-class Next(Exception):
-    """Used in a gather scenario to signify that no reply should be sent,
-    to give another agent the chance to reply."""
 
 
 class ActorType(type):
@@ -47,10 +43,11 @@ class Actor(object):
 
     AsyncResult = AsyncResult
 
-    Error = clError
-    Next = Next
-    NoReplyError = NoReplyError
-    NotBoundError = NotBoundError
+    Error = exceptions.clError
+    Next = exceptions.Next
+    NoReplyError = exceptions.NoReplyError
+    NoRouteError = exceptions.NoRouteError
+    NotBoundError = exceptions.NotBoundError
 
     #: Actor name.
     #: Defaults to the defined class name.
@@ -118,7 +115,6 @@ class Actor(object):
         self.name = name or self.name or self.__class__.__name__
         self.exchange = exchange or self.exchange
         self.agent = agent
-        self.state = self.contribute_to_state(self.construct_state())
         self.logger = logger or logging.getLogger("Actor{%s}" % self.name)
         self.type_to_queue = {"direct": self.get_direct_queue,
                               "round-robin": self.get_rr_queue,
@@ -128,6 +124,7 @@ class Actor(object):
         if not self.exchange:
             self.exchange = Exchange("cl.%s" % (self.name, ), "direct",
                                      auto_delete=True)
+        self.state = self.contribute_to_state(self.construct_state())
 
     def construct_state(self):
         """Instantiates the state class of this actor."""
@@ -143,10 +140,18 @@ class Actor(object):
         return obj
 
     def contribute_to_state(self, state):
-        return self.contribute_to_object(state, {
+        try:
+            contribute = state.contribute_to_state
+        except AttributeError:
+            return self.contribute_to_object(state, {
+                    "actor": self,
+                    "agent": self.agent,
+                    "logger": self.logger,
                     "Next": self.Next,
+                    "NoRouteError": self.NoRouteError,
                     "NoReplyError": self.NoReplyError})
-
+        else:
+            return contribute(self)
 
     def send(self, method, args={}, to="", nowait=False, **kwargs):
         """Call method on agent listening to ``routing_key``.
