@@ -16,11 +16,12 @@ from kombu.utils.encoding import safe_repr
 
 from . import __version__
 from . import exceptions
-from .common import collect_replies, maybe_declare, send_reply, uuid
+from .common import collect_replies, ipublish, maybe_declare, isend_reply, uuid
 from .g import spawn
+from .log import Log
 from .results import AsyncResult
 from .pools import producers
-from .utils import cached_property
+from .utils import cached_property, shortuuid
 
 __all__ = ["Actor"]
 builtin_fields = {"ver": __version__}
@@ -115,7 +116,6 @@ class Actor(object):
         self.name = name or self.name or self.__class__.__name__
         self.exchange = exchange or self.exchange
         self.agent = agent
-        self.logger = logger or logging.getLogger("Actor{%s}" % self.name)
         self.type_to_queue = {"direct": self.get_direct_queue,
                               "round-robin": self.get_rr_queue,
                               "scatter": self.get_scatter_queue}
@@ -124,6 +124,10 @@ class Actor(object):
         if not self.exchange:
             self.exchange = Exchange("cl.%s" % (self.name, ), "direct",
                                      auto_delete=True)
+        logger_name = self.name
+        if self.agent:
+            logger_name = "%s#%s" % (self.name, shortuuid(self.agent.id, ))
+        self.log = Log("!<%s>" % (logger_name, ), logger=logger)
         self.state = self.contribute_to_state(self.construct_state())
 
     def construct_state(self):
@@ -133,6 +137,9 @@ class Actor(object):
     def maybe_setattr(self, obj, attr, value):
         if not hasattr(obj, attr):
             setattr(obj, attr, value)
+
+    def on_agent_ready(self):
+        pass
 
     def contribute_to_object(self, obj, map):
         for attr, value in map.iteritems():
@@ -146,7 +153,7 @@ class Actor(object):
             return self.contribute_to_object(state, {
                     "actor": self,
                     "agent": self.agent,
-                    "logger": self.logger,
+                    "log": self.log,
                     "Next": self.Next,
                     "NoRouteError": self.NoRouteError,
                     "NoReplyError": self.NoReplyError})
@@ -264,6 +271,12 @@ class Actor(object):
         return Consumer(channel, self.get_queues(),
                         callbacks=[self.on_message], **kwargs)
 
+    def _publish(self, body, producer, before=None, **props):
+        if before is not None:
+            before(producer.connection, producer.channel)
+        maybe_declare(props["exchange"], producer.channel)
+        return producer.publish(body, **props)
+
     def cast(self, method, args={}, before=None, retry=None,
             retry_policy=None, type=None, **props):
         """Send message to actor.  Discarding replies."""
@@ -278,14 +291,9 @@ class Actor(object):
             props.setdefault("routing_key", self.type_to_rkey[type])
         props.setdefault("serializer", self.serializer)
 
-        with producers[self._connection].acquire(block=True) as producer:
-            p = producer.publish
-            conn, chan = producer.connection, producer.channel
-            if before is not None:
-                before(conn, chan)
-            maybe_declare(exchange, chan)
-            (conn.ensure(producer, p, **_retry_policy)
-                    if retry else p)(body, exchange=exchange, **props)
+        ipublish(producers[self._connection], self._publish,
+                 (body, ), dict(props, exchange=exchange, before=before),
+                 **(retry_policy or {}))
 
     def call(self, method, args={}, retry=False, retry_policy=None, **props):
         """Send message to actor and return :class:`AsyncResult`."""
@@ -314,8 +322,8 @@ class Actor(object):
             self.reply(message, r)
 
     def reply(self, req, body, **props):
-        return send_reply(self._connection, self.reply_exchange,
-                          req, body, **props)
+        return isend_reply(producers[self._connection],
+                           self.reply_exchange, req, body, props)
 
     def on_message(self, body, message):
         """What to do when a message is received.
@@ -394,20 +402,23 @@ class Actor(object):
         or is a special method (name starting with underscore).
 
         """
-        ticket = ticket or "%%%s" % self.next_anon_ticket()
+        if ticket:
+            sticket = "%s" % (shortuuid(ticket), )
+        else:
+            ticket = sticket = str(self.next_anon_ticket())
         try:
             method, args = itemgetter("method", "args")(body)
-            self.logger.info("{%s} --> %s",
-                             ticket, self._reprcall(method, args))
+            self.log.info("#%s --> %s",
+                          sticket, self._reprcall(method, args))
             act = self.lookup_action(method)
             r = {"ok": act(**kwdict(args or {}))}
-            self.logger.info("{%s} <-- %s", ticket, reprkwargs(r))
+            self.log.info("#%s <-- %s", sticket, reprkwargs(r))
         except self.Next:
             raise
         except Exception, exc:
             einfo = sys.exc_info()
             r = {"nok": [safe_repr(exc), self._get_traceback(einfo)]}
-            self.logger.error("{%s} <-- nok=%r", ticket, exc, exc_info=einfo)
+            self.log.error("#%s <-- nok=%r", sticket, exc)
         return dict(self._default_fields, **r)
 
     def _get_traceback(self, exc_info):
@@ -417,11 +428,8 @@ class Actor(object):
         return "%s.%s" % (self.name, reprcall(method, (), args))
 
     def bind(self, connection, agent=None):
-        o = copy(self)
-        o.connection = connection
-        if agent:
-            o.agent = agent
-        return o
+        return self.__class__(connection, self.id,
+                              self.name, self.exchange, agent=agent)
 
     def is_bound(self):
         return self.connection is not None

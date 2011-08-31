@@ -28,10 +28,14 @@ class Agent(ConsumerMixin):
         pass
 
     def run(self):
-        self.info("Agent on behalf of [%s] starting..." % (
-            ", ".join(actor.name for actor in self.actors), ))
+        self.info("Agent on behalf of [%s] starting...",
+                  ", ".join(actor.name for actor in self.actors))
         self.on_run()
         super(Agent, self).run()
+
+    def on_consume_ready(self):
+        for actor in self.actors:
+            actor.on_agent_ready()
 
     def run_from_commandline(self, loglevel=None, logfile=None):
         setup_logger(loglevel, logfile)

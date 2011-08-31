@@ -38,10 +38,10 @@ def first(it, default=None):
 
 
 def first_or_raise(it, exc):
-    try:
-        return it.next()
-    except StopIteration:
-        raise exc
+    for reply in it:
+        if not isinstance(reply, Exception):
+            return reply
+    raise exc
 
 
 def get_cls_by_name(name, aliases={}, imp=None):
@@ -154,3 +154,15 @@ class TokenBucket(object):
             self._tokens = min(self.capacity, self._tokens + delta)
             self.timestamp = now
         return self._tokens
+
+
+def abbr(S, max, ellipsis="..."):
+    if S and len(S) > max:
+        return ellipsis and (S[:max - len(ellipsis)] + ellipsis) or S[:max]
+    return S
+
+
+def shortuuid(u):
+    if '-' in u:
+        return u[:u.index('-')]
+    return abbr(u, 16)
