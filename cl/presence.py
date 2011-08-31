@@ -8,18 +8,20 @@ import warnings
 from collections import defaultdict
 from contextlib import contextmanager
 from functools import wraps
+from random import shuffle
 from threading import Lock
 from time import time, sleep
 
 from kombu import Consumer, Exchange, Queue
 
 from .agents import Agent
+from .common import ipublish
 from .consumers import ConsumerMixin
-from .exceptions import NoRouteError
 from .g import spawn, timer
 from .log import LogMixin
 from .pools import producers
-from .utils import cached_property, first_or_raise
+from .utils import cached_property, first_or_raise, shortuuid
+from .utils.functional import promise
 
 
 class MockLock(object):
@@ -32,12 +34,12 @@ class MockLock(object):
 
 
 class State(LogMixin):
-    heartbeat_expire = 20
     logger_name = "cl.presence.state"
 
     def __init__(self, presence):
         self.presence = presence
         self._agents = defaultdict(lambda: {})
+        self.heartbeat_expire = self.presence.interval * 2.5
         self.handlers = {"online": self.when_online,
                          "offline": self.when_offline,
                          "heartbeat": self.when_heartbeat,
@@ -47,7 +49,9 @@ class State(LogMixin):
         able = set()
         for id, state in self.agents.iteritems():
             if actor in state["actors"]:
-                able.add(id)
+                # remove the . from the agent, which means that the
+                # agent is a clone of another agent.
+                able.add(id.partition(".")[0])
         return able
 
     def meta_for(self, actor):
@@ -57,8 +61,12 @@ class State(LogMixin):
         self._agents[agent].update(meta=meta)
 
     def agents_by_meta(self, predicate, *sections):
-        for agent, state in self._agents.iteritems():
-            d = state["meta"]
+        agents = self._agents
+        agent_ids = agents.keys()
+        # shuffle the agents so we don't get the same agent every time.
+        shuffle(agent_ids)
+        for agent in agent_ids:
+            d = agents[agent]["meta"]
             for i, section in enumerate(sections):
                 d = d[section]
             if predicate(d):
@@ -72,8 +80,7 @@ class State(LogMixin):
     def on_message(self, body, message):
         event = body["event"]
         self.handlers[event](**body)
-        if self.logger.isEnabledFor(logging.DEBUG):
-            self.info("agents after event recv: %s" % (self.agents, ))
+        self.debug("agents after event recv: %s", promise(lambda: self.agents))
 
     def when_online(self, agent=None, **kw):
         self._update_agent(agent, kw)
@@ -90,8 +97,9 @@ class State(LogMixin):
     def expire_agents(self):
         expired = set()
         for id, state in self._agents.iteritems():
-            if time() > state["ts"] + self.heartbeat_expire:
-                expired.add(id)
+            if state and state.get("ts"):
+                if time() > state["ts"] + self.heartbeat_expire:
+                    expired.add(id)
 
         for id in expired:
             self._remove_agent(id)
@@ -104,11 +112,14 @@ class State(LogMixin):
         kw = dict(kw)
         meta = kw.pop("meta", None)
         if meta:
-            self._update_meta_for(agent, meta)
+            self.update_meta_for(agent, meta)
         self._agents[agent].update(kw)
 
     def _remove_agent(self, agent):
         self._agents[agent].clear()
+
+    def neighbors(self):
+        return {"agents": self.agents.keys()}
 
     @property
     def agents(self):
@@ -124,8 +135,9 @@ class Presence(ConsumerMixin):
     State = State
 
     exchange = Exchange("cl.agents", type="topic", auto_delete=True)
-    interval = 5
+    interval = 10
     _channel = None
+    g = None
 
     def __init__(self, agent, interval=None, on_awake=None):
         self.agent = agent
@@ -147,7 +159,8 @@ class Presence(ConsumerMixin):
                           event=type,
                           actors=[actor.name for actor in self.agent.actors],
                           meta=self.meta(),
-                          ts=time())
+                          ts=time(),
+                          neighbors=self.state.neighbors())
 
     def meta(self):
         return dict((actor.name, actor.meta) for actor in self.agent.actors)
@@ -160,18 +173,20 @@ class Presence(ConsumerMixin):
         if self.on_awake:
             self.on_awake()
         timer(self.interval, self.send_heartbeat)
+        self.agent.on_presence_ready()
         yield
         self.send_offline()
 
-    def announce(self, event):
-        agent = self.agent
-        routing_key = self.agent.id
-        with producers[agent.connection].acquire(block=True) as producer:
-            producer.publish(event, exchange=self.exchange.name,
-                                    routing_key=routing_key)
+    def _announce(self, event, producer=None):
+        producer.publish(event, exchange=self.exchange.name,
+                                routing_key=self.agent.id)
+
+    def announce(self, event, **retry_policy):
+        return ipublish(producers[self.agent.connection],
+                        self._announce, (event, ), **retry_policy)
 
     def start(self):
-        spawn(self.run)
+        self.g = spawn(self.run)
 
     def send_online(self):
         return self.announce(self.create_event("online"))
@@ -192,7 +207,11 @@ class Presence(ConsumerMixin):
 
     @property
     def logger_name(self):
-        return "Presence@%s" % (self.agent.id, )
+        return "Presence#%s" % (shortuuid(self.agent.id), )
+
+    @property
+    def should_stop(self):
+        return self.agent.should_stop
 
 
 class AwareAgent(Agent):
@@ -209,6 +228,9 @@ class AwareAgent(Agent):
     def on_awake(self):
         pass
 
+    def on_presence_ready(self):
+        pass
+
     def lookup_agent(self, pred, *sections):
         return self.presence.state.first_agent_by_meta(pred, *sections)
 
@@ -221,6 +243,7 @@ class AwareAgent(Agent):
 
 
 class AwareActorMixin(object):
+    meta_lookup_section = None
 
     def lookup(self, value):
         if self.agent:
@@ -233,16 +256,17 @@ class AwareActorMixin(object):
         try:
             actor = self.lookup(to)
         except KeyError:
-            raise NoRouteError(to)
+            raise self.NoRouteError(to)
 
         if actor:
             return self.send(method, args, to=actor, **kwargs)
-        return first_or_raise(self.scatter(method, args, **kwargs),
-                              NoRouteError())
+        return first_or_raise(self.scatter(method, args,
+                                           propagate=True, **kwargs),
+                              self.NoRouteError(to))
 
     def wakeup_all_agents(self):
         if self.agent:
-            self.logger.info("* Presence wakeup others")
+            self.log.info("presence wakeup others")
             self.agent.presence.wakeup()
 
 
