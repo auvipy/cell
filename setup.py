@@ -80,7 +80,7 @@ setup(
     zip_safe=False,
     test_suite="nose.collector",
     install_requires=[
-        'kombu>=1.2.1',
+        'kombu>=1.3.0',
     ],
     tests_require=tests_require,
     classifiers=[
