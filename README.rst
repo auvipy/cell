@@ -2,7 +2,7 @@
  cl - Actor framework for Kombu
 #############################################
 
-:Version: 1.2.1
+:Version: 0.0.2
 
 Synopsis
 ========
