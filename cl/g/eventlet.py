@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-import sys
 import warnings
 
 from eventlet import Timeout      # noqa
@@ -35,8 +34,7 @@ class Entry(object):
         try:
             return blocking(self.fun, *self.args, **self.kwargs)
         except Exception, exc:
-            warnings.warn("Periodic timer %r raised: %r" % (fun, exc),
-                            exc_info=sys.exc_info())
+            warnings.warn("Periodic timer %r raised: %r" % (self.fun, exc))
         finally:
             self._spawn()
 

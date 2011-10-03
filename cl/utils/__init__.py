@@ -3,7 +3,6 @@
 from __future__ import absolute_import
 
 import operator
-import time
 
 from importlib import import_module
 from itertools import imap, ifilter

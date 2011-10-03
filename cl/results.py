@@ -1,9 +1,11 @@
 """cl.result"""
 
-from __future__ import absolute_import, with_statement
+from __future__ import absolute_import
+from __future__ import with_statement
+
+from kombu.pools import producers
 
 from .exceptions import clError, NoReplyError
-from .pools import producers
 
 __all__ = ["AsyncResult"]
 
@@ -35,7 +37,7 @@ class AsyncResult(object):
                 yield r
 
     def _gather(self, *args, **kwargs):
-        propagate=kwargs.pop("propagate", True)
+        propagate = kwargs.pop("propagate", True)
         return (self.to_python(reply, propagate=propagate)
                     for reply in self.actor._collect_replies(*args, **kwargs))
 

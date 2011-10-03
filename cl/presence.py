@@ -2,35 +2,24 @@
 
 from __future__ import absolute_import, with_statement
 
-import logging
 import warnings
 
 from collections import defaultdict
 from contextlib import contextmanager
 from functools import wraps
 from random import shuffle
-from threading import Lock
 from time import time, sleep
 
-from kombu import Consumer, Exchange, Queue
+from kombu import Exchange, Queue
 from kombu.common import ipublish
-from kombu.mixins import ConsumerMixin
 from kombu.log import LogMixin
+from kombu.mixins import ConsumerMixin
+from kombu.pools import producers
 from kombu.utils.functional import promise
 
 from .agents import Agent
 from .g import spawn, timer
-from .pools import producers
 from .utils import cached_property, first_or_raise, shortuuid
-
-
-class MockLock(object):
-
-    def __enter__(self):
-        pass
-
-    def __exit__(self, *exc_info):
-        pass
 
 
 class State(LogMixin):
@@ -249,7 +238,6 @@ class AwareActorMixin(object):
         if self.agent:
             return self.agent.lookup_agent(lambda values: value in values,
                                            self.name, self.meta_lookup_section)
-
 
     def send_to_able(self, method, args={}, to=None, **kwargs):
         actor = None

@@ -2,11 +2,6 @@
 
 from __future__ import absolute_import, with_statement
 
-import sys
-import logging
-
-from contextlib import contextmanager
-
 from kombu.common import uuid
 from kombu.log import setup_logging
 from kombu.mixins import ConsumerMixin
@@ -55,4 +50,3 @@ class Agent(ConsumerMixin):
 
     def get_default_scatter_limit(self, actor):
         return None
-

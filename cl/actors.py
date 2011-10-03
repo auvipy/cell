@@ -2,11 +2,9 @@
 
 from __future__ import absolute_import, with_statement
 
-import logging
 import sys
 import traceback
 
-from copy import copy
 from itertools import count
 from operator import itemgetter
 
@@ -14,14 +12,13 @@ from kombu import Consumer, Exchange, Queue
 from kombu.common import (collect_replies, ipublish, isend_reply,
                           maybe_declare, uuid)
 from kombu.log import Log
+from kombu.pools import producers
 from kombu.utils import kwdict, reprcall, reprkwargs
 from kombu.utils.encoding import safe_repr
 
 from . import __version__
 from . import exceptions
-from .g import spawn
 from .results import AsyncResult
-from .pools import producers
 from .utils import cached_property, shortuuid
 
 __all__ = ["Actor"]
@@ -30,7 +27,7 @@ builtin_fields = {"ver": __version__}
 
 class ActorType(type):
 
-    def __repr__(mcs):
+    def __repr__(self):
         name = self.name
         if not name:
             try:
