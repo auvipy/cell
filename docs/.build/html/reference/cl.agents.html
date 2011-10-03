@@ -1,0 +1,175 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cl.agents &mdash; cl v0.0.2 documentation</title>
+    <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="cl v0.0.2 documentation" href="../index.html" />
+    <link rel="up" title="API Reference" href="index.html" />
+    <link rel="next" title="cl.results" href="cl.results.html" />
+    <link rel="prev" title="cl.actors" href="cl.actors.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cl.results.html" title="cl.results"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="cl.actors.html" title="cl.actors"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">cl v0.0.2 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p>
+        This document describes Celery 0.0. For development docs,
+        <a href="http://ask.github.com/cl/reference/cl.agents.html">go here</a>.
+        </p>
+    
+
+</div>
+    <div class="section" id="cl-agents">
+<h1>cl.agents<a class="headerlink" href="#cl-agents" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-cl.agents"></span><p>cl.agents</p>
+<dl class="class">
+<dt id="cl.agents.Agent">
+<em class="property">class </em><tt class="descclassname">cl.agents.</tt><tt class="descname">Agent</tt><big>(</big><em>connection</em>, <em>id=None</em>, <em>actors=None</em><big>)</big><a class="headerlink" href="#cl.agents.Agent" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="cl.agents.Agent.get_consumers">
+<tt class="descname">get_consumers</tt><big>(</big><em>Consumer</em>, <em>channel</em><big>)</big><a class="headerlink" href="#cl.agents.Agent.get_consumers" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.agents.Agent.get_default_scatter_limit">
+<tt class="descname">get_default_scatter_limit</tt><big>(</big><em>actor</em><big>)</big><a class="headerlink" href="#cl.agents.Agent.get_default_scatter_limit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.agents.Agent.on_consume_ready">
+<tt class="descname">on_consume_ready</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#cl.agents.Agent.on_consume_ready" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.agents.Agent.on_run">
+<tt class="descname">on_run</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.agents.Agent.on_run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.agents.Agent.prepare_actors">
+<tt class="descname">prepare_actors</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.agents.Agent.prepare_actors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.agents.Agent.run">
+<tt class="descname">run</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.agents.Agent.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.agents.Agent.run_from_commandline">
+<tt class="descname">run_from_commandline</tt><big>(</big><em>loglevel=None</em>, <em>logfile=None</em><big>)</big><a class="headerlink" href="#cl.agents.Agent.run_from_commandline" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.agents.Agent.stop">
+<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.agents.Agent.stop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cl.actors.html"
+                        title="previous chapter">cl.actors</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cl.results.html"
+                        title="next chapter">cl.results</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/reference/cl.agents.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cl.results.html" title="cl.results"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="cl.actors.html" title="cl.actors"
+             >previous</a> |</li>
+        <li><a href="../index.html">cl v0.0.2 documentation</a> &raquo;</li>
+          <li><a href="index.html" >API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Ask Solem &amp; Contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,520 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cl.actors &mdash; cl v0.0.2 documentation</title>
+    <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="cl v0.0.2 documentation" href="../index.html" />
+    <link rel="up" title="API Reference" href="index.html" />
+    <link rel="next" title="cl.agents" href="cl.agents.html" />
+    <link rel="prev" title="API Reference" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cl.agents.html" title="cl.agents"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="API Reference"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">cl v0.0.2 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p>
+        This document describes Celery 0.0. For development docs,
+        <a href="http://ask.github.com/cl/reference/cl.actors.html">go here</a>.
+        </p>
+    
+
+</div>
+    <div class="section" id="cl-actors">
+<h1>cl.actors<a class="headerlink" href="#cl-actors" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-cl.actors"></span><p>cl.actors</p>
+<dl class="class">
+<dt id="cl.actors.Actor">
+<em class="property">class </em><tt class="descclassname">cl.actors.</tt><tt class="descname">Actor</tt><big>(</big><em>connection=None</em>, <em>id=None</em>, <em>name=None</em>, <em>exchange=None</em>, <em>logger=None</em>, <em>agent=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#cl.actors.Actor" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="class">
+<dt id="cl.actors.Actor.AsyncResult">
+<em class="property">class </em><tt class="descname">AsyncResult</tt><big>(</big><em>ticket</em>, <em>actor</em><big>)</big><a class="headerlink" href="#cl.actors.Actor.AsyncResult" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="cl.actors.Actor.AsyncResult.Error">
+<tt class="descname">Error</tt><a class="headerlink" href="#cl.actors.Actor.AsyncResult.Error" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">clError</span></tt></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="cl.actors.Actor.AsyncResult.NoReplyError">
+<em class="property">exception </em><tt class="descname">NoReplyError</tt><a class="headerlink" href="#cl.actors.Actor.AsyncResult.NoReplyError" title="Permalink to this definition">¶</a></dt>
+<dd><p>No reply received within time constraint</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.AsyncResult.gather">
+<tt class="descclassname">Actor.AsyncResult.</tt><tt class="descname">gather</tt><big>(</big><em>propagate=True</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#cl.actors.Actor.AsyncResult.gather" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.AsyncResult.get">
+<tt class="descclassname">Actor.AsyncResult.</tt><tt class="descname">get</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#cl.actors.Actor.AsyncResult.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.AsyncResult.to_python">
+<tt class="descclassname">Actor.AsyncResult.</tt><tt class="descname">to_python</tt><big>(</big><em>reply</em>, <em>propagate=True</em><big>)</big><a class="headerlink" href="#cl.actors.Actor.AsyncResult.to_python" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.Consumer">
+<tt class="descclassname">Actor.</tt><tt class="descname">Consumer</tt><big>(</big><em>channel</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#cl.actors.Actor.Consumer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <tt class="xref py py-class docutils literal"><span class="pre">kombu.Consumer</span></tt> instance for this Actor.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cl.actors.Actor.Error">
+<tt class="descclassname">Actor.</tt><tt class="descname">Error</tt><a class="headerlink" href="#cl.actors.Actor.Error" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <tt class="xref py py-class docutils literal"><span class="pre">clError</span></tt></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="cl.actors.Actor.Next">
+<em class="property">exception </em><tt class="descclassname">Actor.</tt><tt class="descname">Next</tt><a class="headerlink" href="#cl.actors.Actor.Next" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used in a gather scenario to signify that no reply should be sent,
+to give another agent the chance to reply.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="cl.actors.Actor.NoReplyError">
+<em class="property">exception </em><tt class="descclassname">Actor.</tt><tt class="descname">NoReplyError</tt><a class="headerlink" href="#cl.actors.Actor.NoReplyError" title="Permalink to this definition">¶</a></dt>
+<dd><p>No reply received within time constraint</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="cl.actors.Actor.NoRouteError">
+<em class="property">exception </em><tt class="descclassname">Actor.</tt><tt class="descname">NoRouteError</tt><a class="headerlink" href="#cl.actors.Actor.NoRouteError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Presence: No known route for wanted item.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="cl.actors.Actor.NotBoundError">
+<em class="property">exception </em><tt class="descclassname">Actor.</tt><tt class="descname">NotBoundError</tt><a class="headerlink" href="#cl.actors.Actor.NotBoundError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Object is not bound to a connection.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.bind">
+<tt class="descclassname">Actor.</tt><tt class="descname">bind</tt><big>(</big><em>connection</em>, <em>agent=None</em><big>)</big><a class="headerlink" href="#cl.actors.Actor.bind" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.call">
+<tt class="descclassname">Actor.</tt><tt class="descname">call</tt><big>(</big><em>method</em>, <em>args={}</em>, <em>retry=False</em>, <em>retry_policy=None</em>, <em>**props</em><big>)</big><a class="headerlink" href="#cl.actors.Actor.call" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send message to actor and return <a class="reference internal" href="#cl.actors.Actor.AsyncResult" title="cl.actors.Actor.AsyncResult"><tt class="xref py py-class docutils literal"><span class="pre">AsyncResult</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.call_or_cast">
+<tt class="descclassname">Actor.</tt><tt class="descname">call_or_cast</tt><big>(</big><em>method</em>, <em>args={}</em>, <em>nowait=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#cl.actors.Actor.call_or_cast" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply remote <cite>method</cite> asynchronously or synchronously depending
+on the value of <cite>nowait</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>method</strong> &#8211; The name of the remote method to perform.</li>
+<li><strong>args</strong> &#8211; Dictionary of arguments for the method.</li>
+<li><strong>nowait</strong> &#8211; If false the call will be block until the result
+is available and return it (default), if true the call will be
+non-blocking.</li>
+<li><strong>retry</strong> &#8211; If set to true then message sending will be retried
+in the event of connection failures. Default is decided by the
+<a class="reference internal" href="#cl.actors.Actor.retry" title="cl.actors.Actor.retry"><tt class="xref py py-attr docutils literal"><span class="pre">retry</span></tt></a> attributed.</li>
+<li><strong>retry_policy</strong> &#8211; Override retry policies.
+See <a class="reference internal" href="#cl.actors.Actor.retry_policy" title="cl.actors.Actor.retry_policy"><tt class="xref py py-attr docutils literal"><span class="pre">retry_policy</span></tt></a>.  This must be a dictionary, and keys will
+be merged with the default retry policy.</li>
+<li><strong>timeout</strong> &#8211; Timeout to wait for replies in seconds as a float
+(<strong>only relevant in blocking mode</strong>).</li>
+<li><strong>limit</strong> &#8211; Limit number of replies to wait for
+(<strong>only relevant in blocking mode</strong>).</li>
+<li><strong>callback</strong> &#8211; If provided, this callback will be called for every
+reply received (<strong>only relevant in blocking mode</strong>).</li>
+<li><strong>**props</strong> &#8211; Additional message properties.
+See <tt class="xref py py-meth docutils literal"><span class="pre">kombu.Producer.publish()</span></tt>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.cast">
+<tt class="descclassname">Actor.</tt><tt class="descname">cast</tt><big>(</big><em>method</em>, <em>args={}</em>, <em>before=None</em>, <em>retry=None</em>, <em>retry_policy=None</em>, <em>type=None</em>, <em>**props</em><big>)</big><a class="headerlink" href="#cl.actors.Actor.cast" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send message to actor.  Discarding replies.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.construct_state">
+<tt class="descclassname">Actor.</tt><tt class="descname">construct_state</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.actors.Actor.construct_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instantiates the state class of this actor.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.contribute_to_object">
+<tt class="descclassname">Actor.</tt><tt class="descname">contribute_to_object</tt><big>(</big><em>obj</em>, <em>map</em><big>)</big><a class="headerlink" href="#cl.actors.Actor.contribute_to_object" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.contribute_to_state">
+<tt class="descclassname">Actor.</tt><tt class="descname">contribute_to_state</tt><big>(</big><em>state</em><big>)</big><a class="headerlink" href="#cl.actors.Actor.contribute_to_state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="cl.actors.Actor.default_fields">
+<tt class="descclassname">Actor.</tt><tt class="descname">default_fields</tt><a class="headerlink" href="#cl.actors.Actor.default_fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Additional fields added to reply messages by default.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cl.actors.Actor.default_routing_key">
+<tt class="descclassname">Actor.</tt><tt class="descname">default_routing_key</tt><a class="headerlink" href="#cl.actors.Actor.default_routing_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default routing key used if no <tt class="docutils literal"><span class="pre">to</span></tt> argument passed.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cl.actors.Actor.default_timeout">
+<tt class="descclassname">Actor.</tt><tt class="descname">default_timeout</tt><a class="headerlink" href="#cl.actors.Actor.default_timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default timeout in seconds as a float which after
+we give up waiting for replies.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cl.actors.Actor.delivery_mode">
+<tt class="descclassname">Actor.</tt><tt class="descname">delivery_mode</tt><a class="headerlink" href="#cl.actors.Actor.delivery_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delivery mode: persistent or transient. Default is persistent.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cl.actors.Actor.exchange">
+<tt class="descclassname">Actor.</tt><tt class="descname">exchange</tt><a class="headerlink" href="#cl.actors.Actor.exchange" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default exchange used for messages to this actor.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.get_default_scatter_limit">
+<tt class="descclassname">Actor.</tt><tt class="descname">get_default_scatter_limit</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.actors.Actor.get_default_scatter_limit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.get_direct_queue">
+<tt class="descclassname">Actor.</tt><tt class="descname">get_direct_queue</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.actors.Actor.get_direct_queue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a unique queue that can be used to listen for messages
+to this class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.get_queues">
+<tt class="descclassname">Actor.</tt><tt class="descname">get_queues</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.actors.Actor.get_queues" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.get_reply_queue">
+<tt class="descclassname">Actor.</tt><tt class="descname">get_reply_queue</tt><big>(</big><em>ticket</em><big>)</big><a class="headerlink" href="#cl.actors.Actor.get_reply_queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.get_rr_queue">
+<tt class="descclassname">Actor.</tt><tt class="descname">get_rr_queue</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.actors.Actor.get_rr_queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.get_scatter_queue">
+<tt class="descclassname">Actor.</tt><tt class="descname">get_scatter_queue</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.actors.Actor.get_scatter_queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.handle_call">
+<tt class="descclassname">Actor.</tt><tt class="descname">handle_call</tt><big>(</big><em>body</em>, <em>message</em><big>)</big><a class="headerlink" href="#cl.actors.Actor.handle_call" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handle call message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.handle_cast">
+<tt class="descclassname">Actor.</tt><tt class="descname">handle_cast</tt><big>(</big><em>body</em>, <em>message</em><big>)</big><a class="headerlink" href="#cl.actors.Actor.handle_cast" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handle cast message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.is_bound">
+<tt class="descclassname">Actor.</tt><tt class="descname">is_bound</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.actors.Actor.is_bound" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.lookup_action">
+<tt class="descclassname">Actor.</tt><tt class="descname">lookup_action</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#cl.actors.Actor.lookup_action" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.maybe_setattr">
+<tt class="descclassname">Actor.</tt><tt class="descname">maybe_setattr</tt><big>(</big><em>obj</em>, <em>attr</em>, <em>value</em><big>)</big><a class="headerlink" href="#cl.actors.Actor.maybe_setattr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="cl.actors.Actor.name">
+<tt class="descclassname">Actor.</tt><tt class="descname">name</tt><a class="headerlink" href="#cl.actors.Actor.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Actor name.
+Defaults to the defined class name.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cl.actors.Actor.next_anon_ticket">
+<tt class="descclassname">Actor.</tt><tt class="descname">next_anon_ticket</tt><a class="headerlink" href="#cl.actors.Actor.next_anon_ticket" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the next anonymous ticket number
+used for identifying related logs.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cl.actors.Actor.no_ack">
+<tt class="descclassname">Actor.</tt><tt class="descname">no_ack</tt><a class="headerlink" href="#cl.actors.Actor.no_ack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set to True to disable acks.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.on_agent_ready">
+<tt class="descclassname">Actor.</tt><tt class="descname">on_agent_ready</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.actors.Actor.on_agent_ready" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.on_message">
+<tt class="descclassname">Actor.</tt><tt class="descname">on_message</tt><big>(</big><em>body</em>, <em>message</em><big>)</big><a class="headerlink" href="#cl.actors.Actor.on_message" title="Permalink to this definition">¶</a></dt>
+<dd><p>What to do when a message is received.</p>
+<p>This is a kombu consumer callback taking the standard
+<tt class="docutils literal"><span class="pre">body</span></tt> and <tt class="docutils literal"><span class="pre">message</span></tt> arguments.</p>
+<p>Note that if the properties of the message contains
+a value for <tt class="docutils literal"><span class="pre">reply_to</span></tt> then a proper implementation
+is expected to send a reply.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.reply">
+<tt class="descclassname">Actor.</tt><tt class="descname">reply</tt><big>(</big><em>req</em>, <em>body</em>, <em>**props</em><big>)</big><a class="headerlink" href="#cl.actors.Actor.reply" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="cl.actors.Actor.reply_exchange">
+<tt class="descclassname">Actor.</tt><tt class="descname">reply_exchange</tt><a class="headerlink" href="#cl.actors.Actor.reply_exchange" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exchanged used for replies.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cl.actors.Actor.reply_expires">
+<tt class="descclassname">Actor.</tt><tt class="descname">reply_expires</tt><a class="headerlink" href="#cl.actors.Actor.reply_expires" title="Permalink to this definition">¶</a></dt>
+<dd><p>Time in seconds as a float which after replies expires.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cl.actors.Actor.retry">
+<tt class="descclassname">Actor.</tt><tt class="descname">retry</tt><a class="headerlink" href="#cl.actors.Actor.retry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Should we retry publishing messages by default?
+Default: NO</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cl.actors.Actor.retry_policy">
+<tt class="descclassname">Actor.</tt><tt class="descname">retry_policy</tt><a class="headerlink" href="#cl.actors.Actor.retry_policy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default policy used when retrying publishing messages.
+see <tt class="xref py py-meth docutils literal"><span class="pre">kombu.BrokerConnection.ensure()</span></tt> for a list
+of supported keys.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cl.actors.Actor.routing_key">
+<tt class="descclassname">Actor.</tt><tt class="descname">routing_key</tt><a class="headerlink" href="#cl.actors.Actor.routing_key" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.scatter">
+<tt class="descclassname">Actor.</tt><tt class="descname">scatter</tt><big>(</big><em>method</em>, <em>args={}</em>, <em>nowait=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#cl.actors.Actor.scatter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Broadcast method to all agents.</p>
+<p>In this context the reply limit is disabled, and the timeout
+is set to 1 by default, which means we collect all the replies
+that managed to be sent within the requested timeout.</p>
+<p>See <a href="#id1"><span class="problematic" id="id2">:method:`call_or_cast`</span></a> for a full list of supported
+arguments.</p>
+<p>If the keyword argument <cite>nowait</cite> is false (default) it
+will block and return the replies.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.send">
+<tt class="descclassname">Actor.</tt><tt class="descname">send</tt><big>(</big><em>method</em>, <em>args={}</em>, <em>to=None</em>, <em>nowait=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#cl.actors.Actor.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Call method on agent listening to <tt class="docutils literal"><span class="pre">routing_key</span></tt>.</p>
+<p>See <a href="#id3"><span class="problematic" id="id4">:method:`call_or_cast`</span></a> for a full list of supported
+arguments.</p>
+<p>If the keyword argument <cite>nowait</cite> is false (default) it
+will block and return the reply.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cl.actors.Actor.serializer">
+<tt class="descclassname">Actor.</tt><tt class="descname">serializer</tt><a class="headerlink" href="#cl.actors.Actor.serializer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default serializer used to send messages and reply messages.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.setup">
+<tt class="descclassname">Actor.</tt><tt class="descname">setup</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.actors.Actor.setup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="cl.actors.Actor.state">
+<em class="property">class </em><tt class="descclassname">Actor.</tt><tt class="descname">state</tt><a class="headerlink" href="#cl.actors.Actor.state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.actors.Actor.throw">
+<tt class="descclassname">Actor.</tt><tt class="descname">throw</tt><big>(</big><em>method</em>, <em>args={}</em>, <em>nowait=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#cl.actors.Actor.throw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Call method on one of the agents in round robin.</p>
+<p>See <a href="#id5"><span class="problematic" id="id6">:method:`call_or_cast`</span></a> for a full list of supported
+arguments.</p>
+<p>If the keyword argument <cite>nowait</cite> is false (default) it
+will block and return the reply.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cl.actors.Actor.type_to_rkey">
+<tt class="descclassname">Actor.</tt><tt class="descname">type_to_rkey</tt><a class="headerlink" href="#cl.actors.Actor.type_to_rkey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Map of calling types and their special routing keys.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cl.actors.Actor.types">
+<tt class="descclassname">Actor.</tt><tt class="descname">types</tt><a class="headerlink" href="#cl.actors.Actor.types" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of calling types this actor should handle.
+Valid types are:</p>
+<blockquote>
+<div><ul>
+<li><dl class="first docutils">
+<dt>direct</dt>
+<dd><p class="first last">Send the message directly to an agent by exact routing key.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>round-robin</dt>
+<dd><p class="first last">Send the message to an agent by round-robin.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>scatter</dt>
+<dd><p class="first last">Send the message to all of the agents (broadcast).</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">API Reference</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cl.agents.html"
+                        title="next chapter">cl.agents</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/reference/cl.actors.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cl.agents.html" title="cl.agents"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="API Reference"
+             >previous</a> |</li>
+        <li><a href="../index.html">cl v0.0.2 documentation</a> &raquo;</li>
+          <li><a href="index.html" >API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Ask Solem &amp; Contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
+    </div>
+  </body>
+</html>

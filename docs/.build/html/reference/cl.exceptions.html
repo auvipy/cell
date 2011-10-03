@@ -1,0 +1,155 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cl.exceptions &mdash; cl v0.0.2 documentation</title>
+    <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="cl v0.0.2 documentation" href="../index.html" />
+    <link rel="up" title="API Reference" href="index.html" />
+    <link rel="next" title="cl.presence" href="cl.presence.html" />
+    <link rel="prev" title="cl.results" href="cl.results.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cl.presence.html" title="cl.presence"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="cl.results.html" title="cl.results"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">cl v0.0.2 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p>
+        This document describes Celery 0.0. For development docs,
+        <a href="http://ask.github.com/cl/reference/cl.exceptions.html">go here</a>.
+        </p>
+    
+
+</div>
+    <div class="section" id="cl-exceptions">
+<h1>cl.exceptions<a class="headerlink" href="#cl-exceptions" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-cl.exceptions"></span><p>cl.exceptions</p>
+<dl class="exception">
+<dt id="cl.exceptions.clError">
+<em class="property">exception </em><tt class="descclassname">cl.exceptions.</tt><tt class="descname">clError</tt><big>(</big><em>exc=None</em>, <em>traceback=None</em><big>)</big><a class="headerlink" href="#cl.exceptions.clError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remote method raised exception.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="cl.exceptions.Next">
+<em class="property">exception </em><tt class="descclassname">cl.exceptions.</tt><tt class="descname">Next</tt><a class="headerlink" href="#cl.exceptions.Next" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used in a gather scenario to signify that no reply should be sent,
+to give another agent the chance to reply.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="cl.exceptions.NoReplyError">
+<em class="property">exception </em><tt class="descclassname">cl.exceptions.</tt><tt class="descname">NoReplyError</tt><a class="headerlink" href="#cl.exceptions.NoReplyError" title="Permalink to this definition">¶</a></dt>
+<dd><p>No reply received within time constraint</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="cl.exceptions.NotBoundError">
+<em class="property">exception </em><tt class="descclassname">cl.exceptions.</tt><tt class="descname">NotBoundError</tt><a class="headerlink" href="#cl.exceptions.NotBoundError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Object is not bound to a connection.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cl.results.html"
+                        title="previous chapter">cl.results</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cl.presence.html"
+                        title="next chapter">cl.presence</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/reference/cl.exceptions.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cl.presence.html" title="cl.presence"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="cl.results.html" title="cl.results"
+             >previous</a> |</li>
+        <li><a href="../index.html">cl v0.0.2 documentation</a> &raquo;</li>
+          <li><a href="index.html" >API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Ask Solem &amp; Contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
+    </div>
+  </body>
+</html>

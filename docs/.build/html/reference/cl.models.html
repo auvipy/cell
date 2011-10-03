@@ -1,0 +1,187 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cl.models &mdash; cl v0.0.2 documentation</title>
+    <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="cl v0.0.2 documentation" href="../index.html" />
+    <link rel="up" title="API Reference" href="index.html" />
+    <link rel="next" title="cl.g" href="cl.g.html" />
+    <link rel="prev" title="cl.presence" href="cl.presence.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cl.g.html" title="cl.g"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="cl.presence.html" title="cl.presence"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">cl v0.0.2 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p>
+        This document describes Celery 0.0. For development docs,
+        <a href="http://ask.github.com/cl/reference/cl.models.html">go here</a>.
+        </p>
+    
+
+</div>
+    <div class="section" id="cl-models">
+<h1>cl.models<a class="headerlink" href="#cl-models" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-cl.models"></span><p>cl.models</p>
+<dl class="class">
+<dt id="cl.models.ModelActor">
+<em class="property">class </em><tt class="descclassname">cl.models.</tt><tt class="descname">ModelActor</tt><big>(</big><em>connection=None</em>, <em>id=None</em>, <em>name=None</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#cl.models.ModelActor" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="cl.models.ModelActor.Consumer">
+<tt class="descname">Consumer</tt><big>(</big><em>channel</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#cl.models.ModelActor.Consumer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="cl.models.ModelActor.model">
+<tt class="descname">model</tt><a class="headerlink" href="#cl.models.ModelActor.model" title="Permalink to this definition">¶</a></dt>
+<dd><p>The model this actor is a controller for (<em>required</em>).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cl.models.ModelActor.sigmap">
+<tt class="descname">sigmap</tt><a class="headerlink" href="#cl.models.ModelActor.sigmap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Map of signals to connect and corresponding actions.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cl.models.ModelConsumer">
+<em class="property">class </em><tt class="descclassname">cl.models.</tt><tt class="descname">ModelConsumer</tt><big>(</big><em>channel</em>, <em>exchange</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#cl.models.ModelConsumer" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="cl.models.ModelConsumer.create_queue">
+<tt class="descname">create_queue</tt><big>(</big><em>field_value</em><big>)</big><a class="headerlink" href="#cl.models.ModelConsumer.create_queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.models.ModelConsumer.find_queue_by_rkey">
+<tt class="descname">find_queue_by_rkey</tt><big>(</big><em>rkey</em><big>)</big><a class="headerlink" href="#cl.models.ModelConsumer.find_queue_by_rkey" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.models.ModelConsumer.on_create">
+<tt class="descname">on_create</tt><big>(</big><em>instance=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#cl.models.ModelConsumer.on_create" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.models.ModelConsumer.on_delete">
+<tt class="descname">on_delete</tt><big>(</big><em>instance=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#cl.models.ModelConsumer.on_delete" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.models.ModelConsumer.prepare_signals">
+<tt class="descname">prepare_signals</tt><big>(</big><em>sigmap=None</em><big>)</big><a class="headerlink" href="#cl.models.ModelConsumer.prepare_signals" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.models.ModelConsumer.sync_queues">
+<tt class="descname">sync_queues</tt><big>(</big><em>keep_queues=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#cl.models.ModelConsumer.sync_queues" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cl.presence.html"
+                        title="previous chapter">cl.presence</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cl.g.html"
+                        title="next chapter">cl.g</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/reference/cl.models.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cl.g.html" title="cl.g"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="cl.presence.html" title="cl.presence"
+             >previous</a> |</li>
+        <li><a href="../index.html">cl v0.0.2 documentation</a> &raquo;</li>
+          <li><a href="index.html" >API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Ask Solem &amp; Contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+================
+ Change history
+================
+
+.. _version-0.0.1:
+
+0.0.1
+=====
+:release-date: TBA
+
+* Initial version.

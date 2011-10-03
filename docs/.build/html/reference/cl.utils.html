@@ -1,0 +1,204 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cl.utils &mdash; cl v0.0.2 documentation</title>
+    <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="cl v0.0.2 documentation" href="../index.html" />
+    <link rel="up" title="API Reference" href="index.html" />
+    <link rel="next" title="cl.bin.cl" href="cl.bin.cl.html" />
+    <link rel="prev" title="cl.g.eventlet" href="cl.g.eventlet.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cl.bin.cl.html" title="cl.bin.cl"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="cl.g.eventlet.html" title="cl.g.eventlet"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">cl v0.0.2 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p>
+        This document describes Celery 0.0. For development docs,
+        <a href="http://ask.github.com/cl/reference/cl.utils.html">go here</a>.
+        </p>
+    
+
+</div>
+    <div class="section" id="cl-utils">
+<h1>cl.utils<a class="headerlink" href="#cl-utils" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-cl.utils"></span><p>cl.utils</p>
+<dl class="function">
+<dt id="cl.utils.force_list">
+<tt class="descclassname">cl.utils.</tt><tt class="descname">force_list</tt><big>(</big><em>obj</em><big>)</big><a class="headerlink" href="#cl.utils.force_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="cl.utils.flatten">
+<tt class="descclassname">cl.utils.</tt><tt class="descname">flatten</tt><big>(</big><em>it</em><big>)</big><a class="headerlink" href="#cl.utils.flatten" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="cl.utils.get_cls_by_name">
+<tt class="descclassname">cl.utils.</tt><tt class="descname">get_cls_by_name</tt><big>(</big><em>name</em>, <em>aliases={}</em>, <em>imp=None</em><big>)</big><a class="headerlink" href="#cl.utils.get_cls_by_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get class by name.</p>
+<p>The name should be the full dot-separated path to the class:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">modulename</span><span class="o">.</span><span class="n">ClassName</span>
+</pre></div>
+</div>
+<p>Example:</p>
+<div class="highlight-python"><pre>celery.concurrency.processes.TaskPool
+                            ^- class name</pre>
+</div>
+<p>If <cite>aliases</cite> is provided, a dict containing short name/long name
+mappings, the name is looked up in the aliases first.</p>
+<p>Examples:</p>
+<blockquote>
+<div><div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">get_cls_by_name</span><span class="p">(</span><span class="s">&quot;celery.concurrency.processes.TaskPool&quot;</span><span class="p">)</span>
+<span class="go">&lt;class &#39;celery.concurrency.processes.TaskPool&#39;&gt;</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">get_cls_by_name</span><span class="p">(</span><span class="s">&quot;default&quot;</span><span class="p">,</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="s">&quot;default&quot;</span><span class="p">:</span> <span class="s">&quot;celery.concurrency.processes.TaskPool&quot;</span><span class="p">})</span>
+<span class="go">&lt;class &#39;celery.concurrency.processes.TaskPool&#39;&gt;</span>
+</pre></div>
+</div>
+<p># Does not try to look up non-string names.
+&gt;&gt;&gt; from celery.concurrency.processes import TaskPool
+&gt;&gt;&gt; get_cls_by_name(TaskPool) is TaskPool
+True</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="cl.utils.instantiate">
+<tt class="descclassname">cl.utils.</tt><tt class="descname">instantiate</tt><big>(</big><em>name</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#cl.utils.instantiate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instantiate class by name.</p>
+<p>See <a class="reference internal" href="#cl.utils.get_cls_by_name" title="cl.utils.get_cls_by_name"><tt class="xref py py-func docutils literal"><span class="pre">get_cls_by_name()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="cl.utils.cached_property">
+<tt class="descclassname">cl.utils.</tt><tt class="descname">cached_property</tt><a class="headerlink" href="#cl.utils.cached_property" title="Permalink to this definition">¶</a></dt>
+<dd><p>Property descriptor that caches the return value
+of the get function.</p>
+<p><em>Examples</em></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@cached_property</span>
+<span class="k">def</span> <span class="nf">connection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">Connection</span><span class="p">()</span>
+
+<span class="nd">@connection.setter</span>  <span class="c"># Prepares stored value</span>
+<span class="k">def</span> <span class="nf">connection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Connection must be a connection&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">value</span>
+
+<span class="nd">@connection.deleter</span>
+<span class="k">def</span> <span class="nf">connection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="c"># Additional action to do at del(self.attr)</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Connection </span><span class="si">%r</span><span class="s"> deleted&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cl.g.eventlet.html"
+                        title="previous chapter">cl.g.eventlet</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cl.bin.cl.html"
+                        title="next chapter">cl.bin.cl</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/reference/cl.utils.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cl.bin.cl.html" title="cl.bin.cl"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="cl.g.eventlet.html" title="cl.g.eventlet"
+             >previous</a> |</li>
+        <li><a href="../index.html">cl v0.0.2 documentation</a> &raquo;</li>
+          <li><a href="index.html" >API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Ask Solem &amp; Contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
+    </div>
+  </body>
+</html>

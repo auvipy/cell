@@ -1,0 +1,430 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cl.presence &mdash; cl v0.0.2 documentation</title>
+    <link rel="stylesheet" href="../_static/celery.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/issuetracker.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="cl v0.0.2 documentation" href="../index.html" />
+    <link rel="up" title="API Reference" href="index.html" />
+    <link rel="next" title="cl.models" href="cl.models.html" />
+    <link rel="prev" title="cl.exceptions" href="cl.exceptions.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cl.models.html" title="cl.models"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="cl.exceptions.html" title="cl.exceptions"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">cl v0.0.2 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">API Reference</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+<div class="deck">
+
+    
+        <p>
+        This document describes Celery 0.0. For development docs,
+        <a href="http://ask.github.com/cl/reference/cl.presence.html">go here</a>.
+        </p>
+    
+
+</div>
+    <div class="section" id="cl-presence">
+<h1>cl.presence<a class="headerlink" href="#cl-presence" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-cl.presence"></span><p>scs.presence</p>
+<dl class="class">
+<dt id="cl.presence.AwareActorMixin">
+<em class="property">class </em><tt class="descclassname">cl.presence.</tt><tt class="descname">AwareActorMixin</tt><a class="headerlink" href="#cl.presence.AwareActorMixin" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="cl.presence.AwareActorMixin.lookup">
+<tt class="descname">lookup</tt><big>(</big><em>value</em><big>)</big><a class="headerlink" href="#cl.presence.AwareActorMixin.lookup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.AwareActorMixin.send_to_able">
+<tt class="descname">send_to_able</tt><big>(</big><em>method</em>, <em>args={}</em>, <em>to=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#cl.presence.AwareActorMixin.send_to_able" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.AwareActorMixin.wakeup_all_agents">
+<tt class="descname">wakeup_all_agents</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.presence.AwareActorMixin.wakeup_all_agents" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cl.presence.AwareAgent">
+<em class="property">class </em><tt class="descclassname">cl.presence.</tt><tt class="descname">AwareAgent</tt><big>(</big><em>connection</em>, <em>id=None</em>, <em>actors=None</em><big>)</big><a class="headerlink" href="#cl.presence.AwareAgent" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="cl.presence.AwareAgent.get_default_scatter_limit">
+<tt class="descname">get_default_scatter_limit</tt><big>(</big><em>actor</em><big>)</big><a class="headerlink" href="#cl.presence.AwareAgent.get_default_scatter_limit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.AwareAgent.lookup_agent">
+<tt class="descname">lookup_agent</tt><big>(</big><em>pred</em>, <em>*sections</em><big>)</big><a class="headerlink" href="#cl.presence.AwareAgent.lookup_agent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.AwareAgent.lookup_agents">
+<tt class="descname">lookup_agents</tt><big>(</big><em>pred</em>, <em>*sections</em><big>)</big><a class="headerlink" href="#cl.presence.AwareAgent.lookup_agents" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.AwareAgent.on_awake">
+<tt class="descname">on_awake</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.presence.AwareAgent.on_awake" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.AwareAgent.on_presence_ready">
+<tt class="descname">on_presence_ready</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.presence.AwareAgent.on_presence_ready" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.AwareAgent.on_run">
+<tt class="descname">on_run</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.presence.AwareAgent.on_run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="cl.presence.AwareAgent.presence">
+<tt class="descname">presence</tt><a class="headerlink" href="#cl.presence.AwareAgent.presence" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cl.presence.Event">
+<em class="property">class </em><tt class="descclassname">cl.presence.</tt><tt class="descname">Event</tt><a class="headerlink" href="#cl.presence.Event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="cl.presence.Presence">
+<em class="property">class </em><tt class="descclassname">cl.presence.</tt><tt class="descname">Presence</tt><big>(</big><em>agent</em>, <em>interval=None</em>, <em>on_awake=None</em><big>)</big><a class="headerlink" href="#cl.presence.Presence" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="class">
+<dt id="cl.presence.Presence.Event">
+<em class="property">class </em><tt class="descname">Event</tt><a class="headerlink" href="#cl.presence.Presence.Event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="cl.presence.Presence.State">
+<em class="property">class </em><tt class="descclassname">Presence.</tt><tt class="descname">State</tt><big>(</big><em>presence</em><big>)</big><a class="headerlink" href="#cl.presence.Presence.State" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="cl.presence.Presence.State.agents">
+<tt class="descname">agents</tt><a class="headerlink" href="#cl.presence.Presence.State.agents" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.State.agents_by_meta">
+<tt class="descname">agents_by_meta</tt><big>(</big><em>predicate</em>, <em>*sections</em><big>)</big><a class="headerlink" href="#cl.presence.Presence.State.agents_by_meta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.State.can">
+<tt class="descname">can</tt><big>(</big><em>actor</em><big>)</big><a class="headerlink" href="#cl.presence.Presence.State.can" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.State.expire_agents">
+<tt class="descname">expire_agents</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.presence.Presence.State.expire_agents" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.State.first_agent_by_meta">
+<tt class="descname">first_agent_by_meta</tt><big>(</big><em>predicate</em>, <em>*sections</em><big>)</big><a class="headerlink" href="#cl.presence.Presence.State.first_agent_by_meta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.State.meta_for">
+<tt class="descname">meta_for</tt><big>(</big><em>actor</em><big>)</big><a class="headerlink" href="#cl.presence.Presence.State.meta_for" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.State.neighbors">
+<tt class="descname">neighbors</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.presence.Presence.State.neighbors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.State.on_message">
+<tt class="descname">on_message</tt><big>(</big><em>body</em>, <em>message</em><big>)</big><a class="headerlink" href="#cl.presence.Presence.State.on_message" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.State.update_agent">
+<tt class="descname">update_agent</tt><big>(</big><em>agent=None</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#cl.presence.Presence.State.update_agent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.State.update_meta_for">
+<tt class="descname">update_meta_for</tt><big>(</big><em>agent</em>, <em>meta</em><big>)</big><a class="headerlink" href="#cl.presence.Presence.State.update_meta_for" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.State.when_heartbeat">
+<tt class="descname">when_heartbeat</tt><big>(</big><em>agent=None</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#cl.presence.Presence.State.when_heartbeat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.State.when_offline">
+<tt class="descname">when_offline</tt><big>(</big><em>agent=None</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#cl.presence.Presence.State.when_offline" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.State.when_online">
+<tt class="descname">when_online</tt><big>(</big><em>agent=None</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#cl.presence.Presence.State.when_online" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.State.when_wakeup">
+<tt class="descname">when_wakeup</tt><big>(</big><em>**kw</em><big>)</big><a class="headerlink" href="#cl.presence.Presence.State.when_wakeup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.announce">
+<tt class="descclassname">Presence.</tt><tt class="descname">announce</tt><big>(</big><em>event</em>, <em>**retry_policy</em><big>)</big><a class="headerlink" href="#cl.presence.Presence.announce" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.can">
+<tt class="descclassname">Presence.</tt><tt class="descname">can</tt><big>(</big><em>actor</em><big>)</big><a class="headerlink" href="#cl.presence.Presence.can" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.create_event">
+<tt class="descclassname">Presence.</tt><tt class="descname">create_event</tt><big>(</big><em>type</em><big>)</big><a class="headerlink" href="#cl.presence.Presence.create_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.extra_context">
+<tt class="descclassname">Presence.</tt><tt class="descname">extra_context</tt><big>(</big><em>*args</em>, <em>**kwds</em><big>)</big><a class="headerlink" href="#cl.presence.Presence.extra_context" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.get_consumers">
+<tt class="descclassname">Presence.</tt><tt class="descname">get_consumers</tt><big>(</big><em>Consumer</em>, <em>channel</em><big>)</big><a class="headerlink" href="#cl.presence.Presence.get_consumers" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.get_queue">
+<tt class="descclassname">Presence.</tt><tt class="descname">get_queue</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.presence.Presence.get_queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="cl.presence.Presence.logger_name">
+<tt class="descclassname">Presence.</tt><tt class="descname">logger_name</tt><a class="headerlink" href="#cl.presence.Presence.logger_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.meta">
+<tt class="descclassname">Presence.</tt><tt class="descname">meta</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.presence.Presence.meta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.send_heartbeat">
+<tt class="descclassname">Presence.</tt><tt class="descname">send_heartbeat</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.presence.Presence.send_heartbeat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.send_offline">
+<tt class="descclassname">Presence.</tt><tt class="descname">send_offline</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.presence.Presence.send_offline" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.send_online">
+<tt class="descclassname">Presence.</tt><tt class="descname">send_online</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.presence.Presence.send_online" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="cl.presence.Presence.should_stop">
+<tt class="descclassname">Presence.</tt><tt class="descname">should_stop</tt><a class="headerlink" href="#cl.presence.Presence.should_stop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.start">
+<tt class="descclassname">Presence.</tt><tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.presence.Presence.start" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.Presence.wakeup">
+<tt class="descclassname">Presence.</tt><tt class="descname">wakeup</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.presence.Presence.wakeup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="cl.presence.State">
+<em class="property">class </em><tt class="descclassname">cl.presence.</tt><tt class="descname">State</tt><big>(</big><em>presence</em><big>)</big><a class="headerlink" href="#cl.presence.State" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="cl.presence.State.agents">
+<tt class="descname">agents</tt><a class="headerlink" href="#cl.presence.State.agents" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.State.agents_by_meta">
+<tt class="descname">agents_by_meta</tt><big>(</big><em>predicate</em>, <em>*sections</em><big>)</big><a class="headerlink" href="#cl.presence.State.agents_by_meta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.State.can">
+<tt class="descname">can</tt><big>(</big><em>actor</em><big>)</big><a class="headerlink" href="#cl.presence.State.can" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.State.expire_agents">
+<tt class="descname">expire_agents</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.presence.State.expire_agents" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.State.first_agent_by_meta">
+<tt class="descname">first_agent_by_meta</tt><big>(</big><em>predicate</em>, <em>*sections</em><big>)</big><a class="headerlink" href="#cl.presence.State.first_agent_by_meta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.State.meta_for">
+<tt class="descname">meta_for</tt><big>(</big><em>actor</em><big>)</big><a class="headerlink" href="#cl.presence.State.meta_for" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.State.neighbors">
+<tt class="descname">neighbors</tt><big>(</big><big>)</big><a class="headerlink" href="#cl.presence.State.neighbors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.State.on_message">
+<tt class="descname">on_message</tt><big>(</big><em>body</em>, <em>message</em><big>)</big><a class="headerlink" href="#cl.presence.State.on_message" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.State.update_agent">
+<tt class="descname">update_agent</tt><big>(</big><em>agent=None</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#cl.presence.State.update_agent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.State.update_meta_for">
+<tt class="descname">update_meta_for</tt><big>(</big><em>agent</em>, <em>meta</em><big>)</big><a class="headerlink" href="#cl.presence.State.update_meta_for" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.State.when_heartbeat">
+<tt class="descname">when_heartbeat</tt><big>(</big><em>agent=None</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#cl.presence.State.when_heartbeat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.State.when_offline">
+<tt class="descname">when_offline</tt><big>(</big><em>agent=None</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#cl.presence.State.when_offline" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.State.when_online">
+<tt class="descname">when_online</tt><big>(</big><em>agent=None</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#cl.presence.State.when_online" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="cl.presence.State.when_wakeup">
+<tt class="descname">when_wakeup</tt><big>(</big><em>**kw</em><big>)</big><a class="headerlink" href="#cl.presence.State.when_wakeup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="cl.presence.announce_after">
+<tt class="descclassname">cl.presence.</tt><tt class="descname">announce_after</tt><big>(</big><em>fun</em><big>)</big><a class="headerlink" href="#cl.presence.announce_after" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper"><p class="logo"><a href="../index.html">
+  <img class="logo" src="http://cloud.github.com/downloads/ask/celery/celery_128.png" alt="Logo"/>
+</a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cl.exceptions.html"
+                        title="previous chapter">cl.exceptions</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cl.models.html"
+                        title="next chapter">cl.models</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/reference/cl.presence.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="cl.models.html" title="cl.models"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="cl.exceptions.html" title="cl.exceptions"
+             >previous</a> |</li>
+        <li><a href="../index.html">cl v0.0.2 documentation</a> &raquo;</li>
+          <li><a href="index.html" >API Reference</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Ask Solem &amp; Contributors.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.8.
+    </div>
+  </body>
+</html>
