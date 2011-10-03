@@ -14,8 +14,8 @@ elif sys.version_info <= (2, 5):
     tests_require.append("simplejson")
 
 
-if sys.version_info < (2, 6):
-    raise Exception("cl requires Python 2.6 or higher.")
+if sys.version_info < (2, 5):
+    raise Exception("cl requires Python 2.5 or higher.")
 
 try:
     from setuptools import setup
@@ -124,6 +124,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 2.6",
+        "Programming Language :: Python :: 2.5",
         "Intended Audience :: Developers",
         "Topic :: Communications",
         "Topic :: System :: Distributed Computing",

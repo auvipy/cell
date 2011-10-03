@@ -28,6 +28,7 @@ class clError(Exception):
 class Next(Exception):
     """Used in a gather scenario to signify that no reply should be sent,
     to give another agent the chance to reply."""
+    pass
 
 
 class NoReplyError(Exception):
@@ -37,7 +38,9 @@ class NoReplyError(Exception):
 
 class NotBoundError(Exception):
     """Object is not bound to a connection."""
+    pass
 
 
 class NoRouteError(Exception):
     """Presence: No known route for wanted item."""
+    pass

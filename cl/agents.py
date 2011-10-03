@@ -1,6 +1,6 @@
 """cl.agents"""
 
-from __future__ import absolute_import, with_statement
+from __future__ import absolute_import
 
 from kombu.common import uuid
 from kombu.log import setup_logging
