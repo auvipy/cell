@@ -2,7 +2,7 @@
 
 PACKAGE="$1"
 SKIP_PACKAGES="$PACKAGE tests"
-SKIP_FILES=""
+SKIP_FILES="cl.bin.rst"
 
 modules=$(find "$PACKAGE" -name "*.py")
 
