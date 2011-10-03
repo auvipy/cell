@@ -17,7 +17,6 @@ from types import ModuleType
 all_by_module = {
     "cl.actors": ["Actor"],
     "cl.agents": ["Agent"],
-    "cl.common": ["uuid"],
 }
 
 object_origins = {}

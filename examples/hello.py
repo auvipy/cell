@@ -6,6 +6,7 @@ connection = Connection()
 
 
 class GreetingActor(Actor):
+    default_routing_key = "GreetingActor"
 
     class state:
 

@@ -13,15 +13,15 @@ from threading import Lock
 from time import time, sleep
 
 from kombu import Consumer, Exchange, Queue
+from kombu.common import ipublish
+from kombu.mixins import ConsumerMixin
+from kombu.log import LogMixin
+from kombu.utils.functional import promise
 
 from .agents import Agent
-from .common import ipublish
-from .consumers import ConsumerMixin
 from .g import spawn, timer
-from .log import LogMixin
 from .pools import producers
 from .utils import cached_property, first_or_raise, shortuuid
-from .utils.functional import promise
 
 
 class MockLock(object):
@@ -251,7 +251,7 @@ class AwareActorMixin(object):
                                            self.name, self.meta_lookup_section)
 
 
-    def send_to_able(self, method, args, to=None, **kwargs):
+    def send_to_able(self, method, args={}, to=None, **kwargs):
         actor = None
         try:
             actor = self.lookup(to)
@@ -260,9 +260,9 @@ class AwareActorMixin(object):
 
         if actor:
             return self.send(method, args, to=actor, **kwargs)
-        return first_or_raise(self.scatter(method, args,
-                                           propagate=True, **kwargs),
-                              self.NoRouteError(to))
+        r = self.scatter(method, args, propagate=True, **kwargs)
+        if r:
+            return first_or_raise(r, self.NoRouteError(to))
 
     def wakeup_all_agents(self):
         if self.agent:

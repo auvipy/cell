@@ -7,9 +7,9 @@ import logging
 
 from contextlib import contextmanager
 
-from .common import uuid
-from .consumers import ConsumerMixin
-from .log import setup_logger
+from kombu.common import uuid
+from kombu.log import setup_logging
+from kombu.mixins import ConsumerMixin
 
 __all__ = ["Agent"]
 
@@ -33,12 +33,15 @@ class Agent(ConsumerMixin):
         self.on_run()
         super(Agent, self).run()
 
-    def on_consume_ready(self):
+    def stop(self):
+        pass
+
+    def on_consume_ready(self, *args, **kwargs):
         for actor in self.actors:
             actor.on_agent_ready()
 
     def run_from_commandline(self, loglevel=None, logfile=None):
-        setup_logger(loglevel, logfile)
+        setup_logging(loglevel, logfile)
         try:
             self.run()
         except KeyboardInterrupt:

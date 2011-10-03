@@ -11,14 +11,15 @@ from itertools import count
 from operator import itemgetter
 
 from kombu import Consumer, Exchange, Queue
+from kombu.common import (collect_replies, ipublish, isend_reply,
+                          maybe_declare, uuid)
+from kombu.log import Log
 from kombu.utils import kwdict, reprcall, reprkwargs
 from kombu.utils.encoding import safe_repr
 
 from . import __version__
 from . import exceptions
-from .common import collect_replies, ipublish, maybe_declare, isend_reply, uuid
 from .g import spawn
-from .log import Log
 from .results import AsyncResult
 from .pools import producers
 from .utils import cached_property, shortuuid
@@ -29,9 +30,9 @@ builtin_fields = {"ver": __version__}
 
 class ActorType(type):
 
-    def __repr__(self):
+    def __repr__(mcs):
         name = self.name
-        if not self.name:
+        if not name:
             try:
                 name = self.__name__
             except AttributeError:
@@ -56,6 +57,15 @@ class Actor(object):
 
     #: Default exchange used for messages to this actor.
     exchange = None
+
+    #: Default routing key used if no ``to`` argument passed.
+    default_routing_key = None
+
+    #: Delivery mode: persistent or transient. Default is persistent.
+    delivery_mode = "persistent"
+
+    #: Set to True to disable acks.
+    no_ack = False
 
     #: List of calling types this actor should handle.
     #: Valid types are:
@@ -129,6 +139,10 @@ class Actor(object):
             logger_name = "%s#%s" % (self.name, shortuuid(self.agent.id, ))
         self.log = Log("!<%s>" % (logger_name, ), logger=logger)
         self.state = self.contribute_to_state(self.construct_state())
+        self.setup()
+
+    def setup(self):
+        pass
 
     def construct_state(self):
         """Instantiates the state class of this actor."""
@@ -160,7 +174,7 @@ class Actor(object):
         else:
             return contribute(self)
 
-    def send(self, method, args={}, to="", nowait=False, **kwargs):
+    def send(self, method, args={}, to=None, nowait=False, **kwargs):
         """Call method on agent listening to ``routing_key``.
 
         See :method:`call_or_cast` for a full list of supported
@@ -170,6 +184,8 @@ class Actor(object):
         will block and return the reply.
 
         """
+        if to is None:
+            to = self.routing_key
         r = self.call_or_cast(method, args, routing_key=to,
                               nowait=nowait, **kwargs)
         if not nowait:
@@ -268,6 +284,7 @@ class Actor(object):
 
     def Consumer(self, channel, **kwargs):
         """Returns a :class:`kombu.Consumer` instance for this Actor."""
+        kwargs.setdefault("no_ack", self.no_ack)
         return Consumer(channel, self.get_queues(),
                         callbacks=[self.on_message], **kwargs)
 
@@ -289,7 +306,10 @@ class Actor(object):
 
         if type:
             props.setdefault("routing_key", self.type_to_rkey[type])
+        props.setdefault("routing_key", self.default_routing_key)
         props.setdefault("serializer", self.serializer)
+
+        props = dict(props, exchange=exchange, before=before)
 
         ipublish(producers[self._connection], self._publish,
                  (body, ), dict(props, exchange=exchange, before=before),
@@ -454,4 +474,6 @@ class Actor(object):
 
     @property
     def routing_key(self):
+        if self.default_routing_key:
+            return self.default_routing_key
         return self.agent.id
