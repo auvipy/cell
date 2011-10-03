@@ -66,6 +66,7 @@ class Actor(object):
 
     #: List of calling types this actor should handle.
     #: Valid types are:
+    #:
     #:     * direct
     #:         Send the message directly to an agent by exact routing key.
     #:     * round-robin
@@ -174,7 +175,7 @@ class Actor(object):
     def send(self, method, args={}, to=None, nowait=False, **kwargs):
         """Call method on agent listening to ``routing_key``.
 
-        See :method:`call_or_cast` for a full list of supported
+        See :meth:`call_or_cast` for a full list of supported
         arguments.
 
         If the keyword argument `nowait` is false (default) it
@@ -191,7 +192,7 @@ class Actor(object):
     def throw(self, method, args={}, nowait=False, **kwargs):
         """Call method on one of the agents in round robin.
 
-        See :method:`call_or_cast` for a full list of supported
+        See :meth:`call_or_cast` for a full list of supported
         arguments.
 
         If the keyword argument `nowait` is false (default) it
@@ -210,7 +211,7 @@ class Actor(object):
         is set to 1 by default, which means we collect all the replies
         that managed to be sent within the requested timeout.
 
-        See :method:`call_or_cast` for a full list of supported
+        See :meth:`call_or_cast` for a full list of supported
         arguments.
 
         If the keyword argument `nowait` is false (default) it
