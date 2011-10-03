@@ -1,0 +1,15 @@
+#!/bin/bash
+base=${1:-.}
+nosetests -vd cl.tests                                          \
+          --with-coverage3                                      \
+            --cover3-branch                                     \
+            --cover3-xml                                        \
+            --cover3-xml-file="$base/coverage.xml"              \
+            --cover3-html                                       \
+            --cover3-html-dir="$base/cover"                     \
+            --cover3-package=cl                                 \
+            --cover3-exclude="                                  \
+              cl                                                \
+              cl.tests.*                                        \
+            --with-xunit                                        \
+              --xunit-file="$base/nosetests.xml"

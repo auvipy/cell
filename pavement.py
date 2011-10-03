@@ -37,7 +37,6 @@ def qhtml(options):
 @needs("clean_docs", "paver.doctools.html")
 def ghdocs(options):
     builtdocs = sphinx_builddir(options)
-    sh("sphinx-to-github", cwd=builtdocs)
     sh("git checkout gh-pages && \
             cp -r %s/* .    && \
             git commit . -m 'Rendered documentation for Github Pages.' && \
@@ -69,13 +68,22 @@ def verifyindex(options):
 
 
 @task
-def flakes(options):
-    sh("find cl examples -name '*.py' | xargs pyflakes")
+def clean_readme(options):
+    path("README").unlink()
+    path("README.rst").unlink()
+
+
+@task
+@needs("clean_readme")
+def readme(options):
+    sh("python contrib/release/sphinx-to-rst.py docs/templates/readme.txt \
+            > README.rst")
+    sh("ln -sf README.rst README")
 
 
 @task
 def bump(options):
-    sh("bump -c cl")
+    sh("contrib/release/bump_version.py cl/__init__.py README.rst")
 
 
 @task
@@ -101,12 +109,26 @@ def test(options):
 ])
 def flake8(options):
     noerror = getattr(options, "noerror", False)
-    complexity = getattr(options, "complexity", 22)
-    sh("""flake8 . | perl -mstrict -mwarnings -nle'
-        my $ignore = m/too complex \((\d+)\)/ && $1 le %s;
-        if (! $ignore) { print STDERR; our $FOUND_FLAKE = 1 }
-    }{exit $FOUND_FLAKE;
-        '""" % (complexity, ), ignore_error=noerror)
+    sh("""flake8 cl""", ignore_error=noerror)
+
+
+@task
+@cmdopts([
+    ("noerror", "E", "Ignore errors"),
+])
+def flakeplus(options):
+    noerror = getattr(options, "noerror", False)
+    sh("python contrib/release/flakeplus.py cl",
+       ignore_error=noerror)
+
+
+@task
+@cmdopts([
+    ("noerror", "E", "Ignore errors"),
+])
+def flakes(options):
+    flake8(options)
+    flakeplus(options)
 
 
 @task
@@ -137,7 +159,7 @@ def gitcleanforce(options):
 
 
 @task
-@needs("flake8", "autodoc", "verifyindex", "test", "gitclean")
+@needs("flakes", "autodoc", "verifyindex", "test", "gitclean")
 def releaseok(options):
     pass
 
