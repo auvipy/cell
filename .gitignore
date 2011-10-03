@@ -19,6 +19,7 @@ bin
 developer-eggs
 downloads
 Documentation/*
+docs/.build/*
 .tox/
 nosetests.xml
 kombu/tests/cover
