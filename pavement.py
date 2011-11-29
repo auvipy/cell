@@ -56,6 +56,9 @@ def upload_pypi_docs(options):
 def upload_docs(options):
     pass
 
+@task
+def bump(options):
+    sh("contrib/release/bump_version.py cl/__init__.py README.rst")
 
 @task
 def autodoc(options):
