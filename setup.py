@@ -100,6 +100,12 @@ if os.path.exists("README.rst"):
 else:
     long_description = "See http://pypi.python.org/pypi/cl"
 
+install_requires = ["kombu>=1.5.0"]
+try:
+    import importlib  # noqa
+except ImportError:
+    install_requires.append("importlib")
+
 setup(
     name='cl',
     version=meta["VERSION"],
@@ -112,9 +118,7 @@ setup(
     data_files=data_files,
     zip_safe=False,
     test_suite="nose.collector",
-    install_requires=[
-        'kombu>=1.3.0',
-    ],
+    install_requires=install_requires,
     tests_require=tests_require,
     classifiers=[
         "Development Status :: 3 - Alpha",
