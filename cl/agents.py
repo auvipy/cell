@@ -2,6 +2,8 @@
 
 from __future__ import absolute_import
 
+from inspect import isclass
+
 from kombu.common import uuid
 from kombu.log import setup_logging
 from kombu.mixins import ConsumerMixin
@@ -42,8 +44,14 @@ class Agent(ConsumerMixin):
         except KeyboardInterrupt:
             self.info("[Quit requested by user]")
 
+    def _maybe_actor(self, actor):
+        if isclass(actor):
+            return actor(self.connection)
+        return actor
+
     def prepare_actors(self):
-        return [actor.bind(self.connection, self) for actor in self.actors]
+        return [self._maybe_actor(actor).bind(self.connection, self)
+                    for actor in self.actors]
 
     def get_consumers(self, Consumer, channel):
         return [actor.Consumer(channel) for actor in self.actors]
