@@ -4,7 +4,7 @@ from celery import current_app as celery
 
 
 class BlenderActor(cl.Actor):
-    default_routing_key = "default"
+    types = ("direct", "round-robin")
 
     def __init__(self, connection=None, *args, **kwargs):
         # - use celery's connection by default,
@@ -27,7 +27,7 @@ class BlenderActor(cl.Actor):
     # - clients don't have to use .call, etc directly
 
     def render(self, blabla, nowait=False):
-        return self.call_or_cast("render", {"blabla": blabla}, nowait=nowait)
+        return self.throw("render", {"blabla": blabla}, nowait=nowait)
 blender = BlenderActor()
 
 
