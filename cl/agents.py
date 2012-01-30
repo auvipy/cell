@@ -37,7 +37,7 @@ class Agent(ConsumerMixin):
         for actor in self.actors:
             actor.on_agent_ready()
 
-    def run_from_commandline(self, loglevel=None, logfile=None):
+    def run_from_commandline(self, loglevel="INFO", logfile=None):
         setup_logging(loglevel, logfile)
         try:
             self.run()
