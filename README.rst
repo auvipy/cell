@@ -47,12 +47,12 @@ Bug tracker
 ===========
 
 If you have any suggestions, bug reports or annoyances please report them
-to our issue tracker at http://github.com/ask/cl/issues/
+to our issue tracker at http://github.com/celery/cl/issues/
 
 Contributing
 ============
 
-Development of `cl` happens at Github: http://github.com/ask/cl
+Development of `cl` happens at Github: http://github.com/celery/cl
 
 You are highly encouraged to participate in the development. If you don't
 like Github (for some reason) you're welcome to send regular patches.
