@@ -2,7 +2,7 @@
 
 from __future__ import absolute_import
 
-__all__ = ["clError", "Next", "NoReplyError", "NotBoundError"]
+__all__ = ['clError', 'Next', 'NoReplyError', 'NotBoundError']
 
 FRIENDLY_ERROR_FMT = """
 Remote method raised exception:

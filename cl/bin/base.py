@@ -8,7 +8,7 @@ import sys
 
 from .. import __version__
 
-__all__ = ["Option", "Command"]
+__all__ = ['Option', 'Command']
 Option = optparse.make_option
 
 
@@ -21,7 +21,7 @@ class Command(object):
     prog_name = None
 
     def run(self, *args, **options):
-        raise NotImplementedError("subclass responsibility")
+        raise NotImplementedError('subclass responsibility')
 
     def execute_from_commandline(self, argv=None):
         """Execute application from command line.
@@ -37,7 +37,7 @@ class Command(object):
 
     def usage(self):
         """Returns the command-line usage string for this app."""
-        return "%%prog [options] %s" % (self.args, )
+        return '%%prog [options] %s' % (self.args, )
 
     def get_options(self):
         """Get supported command line options."""
@@ -58,19 +58,19 @@ class Command(object):
         sys.exit(v)
 
     def exit_status(self, msg, status=0, fh=sys.stderr):
-        fh.write("%s\n" % (msg, ))
+        fh.write('%s\n' % (msg, ))
         self.exit(status)
 
     def exit_usage(self, msg):
-        sys.stderr.write("ERROR: %s\n\n" % (msg, ))
-        self.exit_status("Usage: %s" % (
-                self.usage().replace("%prog", self.prog_name), ))
+        sys.stderr.write('ERROR: %s\n\n' % (msg, ))
+        self.exit_status('Usage: %s' % (
+                self.usage().replace('%prog', self.prog_name), ))
 
     def parse_options(self, prog_name, arguments):
         """Parse the available options."""
         # Don't want to load configuration to just print the version,
         # so we handle --version manually here.
-        if "--version" in arguments:
+        if '--version' in arguments:
             self.exit_status(self.version, fh=sys.stdout)
         parser = self.create_parser(prog_name)
         options, args = parser.parse_args(arguments)

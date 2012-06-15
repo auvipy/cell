@@ -7,20 +7,20 @@ from kombu.utils import gen_unique_id
 
 from . import Actor
 
-_all__ = ["ModelActor", "ModelConsumer"]
+_all__ = ['ModelActor', 'ModelConsumer']
 
 
 class ModelConsumer(Consumer):
     model = None
-    field = "name"
+    field = 'name'
     auto_delete = True
 
     def __init__(self, channel, exchange, *args, **kwargs):
-        model = kwargs.pop("model", None)
+        model = kwargs.pop('model', None)
         self.model = model if model is not None else self.model
         self.exchange = exchange
-        self.prepare_signals(kwargs.pop("sigmap", None))
-        queues = self.sync_queues(kwargs.pop("queues", []))
+        self.prepare_signals(kwargs.pop('sigmap', None))
+        queues = self.sync_queues(kwargs.pop('queues', []))
         super(ModelConsumer, self).__init__(channel, queues, *args, **kwargs)
 
     def prepare_signals(self, sigmap=None):

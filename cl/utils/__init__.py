@@ -9,12 +9,12 @@ from itertools import imap, ifilter
 
 from kombu.utils import cached_property  # noqa
 
-__all__ = ["force_list", "flatten", "get_cls_by_name",
-           "instantiate", "cached_property"]
+__all__ = ['force_list', 'flatten', 'get_cls_by_name',
+           'instantiate', 'cached_property']
 
 
 def force_list(obj):
-    if not hasattr(obj, "__iter__"):
+    if not hasattr(obj, '__iter__'):
         return [obj]
     return obj
 
@@ -60,11 +60,11 @@ def get_cls_by_name(name, aliases={}, imp=None):
 
     Examples:
 
-        >>> get_cls_by_name("celery.concurrency.processes.TaskPool")
+        >>> get_cls_by_name('celery.concurrency.processes.TaskPool')
         <class 'celery.concurrency.processes.TaskPool'>
 
-        >>> get_cls_by_name("default", {
-        ...     "default": "celery.concurrency.processes.TaskPool"})
+        >>> get_cls_by_name('default', {
+        ...     'default': 'celery.concurrency.processes.TaskPool'})
         <class 'celery.concurrency.processes.TaskPool'>
 
         # Does not try to look up non-string names.
@@ -80,7 +80,7 @@ def get_cls_by_name(name, aliases={}, imp=None):
         return name                                 # already a class
 
     name = aliases.get(name) or name
-    module_name, _, cls_name = name.rpartition(".")
+    module_name, _, cls_name = name.rpartition('.')
     try:
         module = imp(module_name)
     except ValueError, exc:
@@ -97,7 +97,7 @@ def instantiate(name, *args, **kwargs):
     return get_cls_by_name(name)(*args, **kwargs)
 
 
-def abbr(S, max, ellipsis="..."):
+def abbr(S, max, ellipsis='...'):
     if S and len(S) > max:
         return ellipsis and (S[:max - len(ellipsis)] + ellipsis) or S[:max]
     return S

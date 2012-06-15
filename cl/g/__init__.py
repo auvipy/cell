@@ -10,7 +10,7 @@ cl does not currently support %r, please use one of %s\
 
 
 class G(object):
-    map = {"eventlet": "_eventlet"}
+    map = {'eventlet': '_eventlet'}
 
     def spawn(self, fun, *args, **kwargs):
         return self.current.spawn(fun, *args, **kwargs)
@@ -39,7 +39,7 @@ class G(object):
             return getattr(self, self.map[type])
         except KeyError:
             raise KeyError(G_NOT_FOUND % (type,
-                                          ", ".join(self.map.keys())))
+                                          ', '.join(self.map.keys())))
 
 g = G()
 blocking = g.blocking

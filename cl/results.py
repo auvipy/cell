@@ -7,7 +7,7 @@ from kombu.pools import producers
 
 from .exceptions import clError, NoReplyError
 
-__all__ = ["AsyncResult"]
+__all__ = ['AsyncResult']
 
 
 class AsyncResult(object):
@@ -23,7 +23,7 @@ class AsyncResult(object):
             replies = list(replies)
             if replies:
                 return replies[0]
-        raise self.NoReplyError("No reply received within time constraint")
+        raise self.NoReplyError('No reply received within time constraint')
 
     def get(self, **kwargs):
         return self._first(self.gather(**dict(kwargs, limit=1)))
@@ -37,15 +37,15 @@ class AsyncResult(object):
                 yield r
 
     def _gather(self, *args, **kwargs):
-        propagate = kwargs.pop("propagate", True)
+        propagate = kwargs.pop('propagate', True)
         return (self.to_python(reply, propagate=propagate)
                     for reply in self.actor._collect_replies(*args, **kwargs))
 
     def to_python(self, reply, propagate=True):
         try:
-            return reply["ok"]
+            return reply['ok']
         except KeyError:
-            error = self.Error(*reply.get("nok") or ())
+            error = self.Error(*reply.get('nok') or ())
             if propagate:
                 raise error
             return error

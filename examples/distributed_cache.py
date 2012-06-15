@@ -12,7 +12,7 @@ def first_reply(replies, key):
 
 
 class Cache(Actor, DictMixin):
-    types = ("scatter", "round-robin")
+    types = ('scatter', 'round-robin')
     default_timeout = 1
 
     class state(object):
@@ -38,22 +38,22 @@ class Cache(Actor, DictMixin):
             return self.data.keys()
 
     def __getitem__(self, key):
-        return first_reply(self.scatter("get", {"key": key}), key)
+        return first_reply(self.scatter('get', {'key': key}), key)
 
     def __delitem__(self, key):
-        return first_reply(self.scatter("delete", {"key": key}), key)
+        return first_reply(self.scatter('delete', {'key': key}), key)
 
     def __setitem__(self, key, value):
-        return self.throw("set", {"key": key, "value": value})
+        return self.throw('set', {'key': key, 'value': value})
 
     def keys(self):
-        return flatten(self.scatter("keys"))
+        return flatten(self.scatter('keys'))
 
 
 class CacheAgent(Agent):
     actors = [Cache()]
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     from kombu import Connection
     CacheAgent(Connection()).run_from_commandline()

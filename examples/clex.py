@@ -4,7 +4,7 @@ from celery import current_app as celery
 
 
 class BlenderActor(cl.Actor):
-    types = ("direct", "round-robin")
+    types = ('direct', 'round-robin')
 
     def __init__(self, connection=None, *args, **kwargs):
         # - use celery's connection by default,
@@ -19,15 +19,15 @@ class BlenderActor(cl.Actor):
         # - the render method.
 
         def render(self, blabla):
-            print("communicates with the blender process here")
-            return "value"
+            print('communicates with the blender process here')
+            return 'value'
 
 
     # - It is good practice to provide helper methods, so that
     # - clients don't have to use .call, etc directly
 
     def render(self, blabla, nowait=False):
-        return self.throw("render", {"blabla": blabla}, nowait=nowait)
+        return self.throw('render', {'blabla': blabla}, nowait=nowait)
 blender = BlenderActor()
 
 
@@ -40,7 +40,7 @@ class Agent(cl.Agent):
             connection or celery.broker_connection(), *args, **kwargs)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     Agent().run_from_commandline()
 
 
@@ -50,8 +50,8 @@ if __name__ == "__main__":
 #    >>> from x import blender
 #
 #    >>> # call and wait for result
-#    >>> blender.render("foo").get()
+#    >>> blender.render('foo').get()
 #    'value'
 #
 #    >>> # send and don't care about result
-#    >>> blender.render("foo", nowait=True)
+#    >>> blender.render('foo', nowait=True)

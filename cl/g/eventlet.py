@@ -34,7 +34,7 @@ class Entry(object):
         try:
             return blocking(self.fun, *self.args, **self.kwargs)
         except Exception, exc:
-            warnings.warn("Periodic timer %r raised: %r" % (self.fun, exc))
+            warnings.warn('Periodic timer %r raised: %r' % (self.fun, exc))
         finally:
             self._spawn()
 
@@ -57,8 +57,8 @@ class Entry(object):
                 pass
 
     def __repr__(self):
-        return "<Entry: %r (%s)>" % (
-                    self.fun, "cancelled" if self.cancelled else "alive")
+        return '<Entry: %r (%s)>' % (
+                    self.fun, 'cancelled' if self.cancelled else 'alive')
 
 
 def timer(interval, fun, *args, **kwargs):

@@ -8,7 +8,7 @@ from kombu.common import uuid
 from kombu.log import setup_logging
 from kombu.mixins import ConsumerMixin
 
-__all__ = ["Agent"]
+__all__ = ['Agent']
 
 
 class Agent(ConsumerMixin):
@@ -25,8 +25,8 @@ class Agent(ConsumerMixin):
         pass
 
     def run(self):
-        self.info("Agent on behalf of [%s] starting...",
-                  ", ".join(actor.name for actor in self.actors))
+        self.info('Agent on behalf of [%s] starting...',
+                  ', '.join(actor.name for actor in self.actors))
         self.on_run()
         super(Agent, self).run()
 
@@ -37,12 +37,12 @@ class Agent(ConsumerMixin):
         for actor in self.actors:
             actor.on_agent_ready()
 
-    def run_from_commandline(self, loglevel="INFO", logfile=None):
+    def run_from_commandline(self, loglevel='INFO', logfile=None):
         setup_logging(loglevel, logfile)
         try:
             self.run()
         except KeyboardInterrupt:
-            self.info("[Quit requested by user]")
+            self.info('[Quit requested by user]')
 
     def _maybe_actor(self, actor):
         if isclass(actor):

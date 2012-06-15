@@ -3,11 +3,11 @@
 from __future__ import absolute_import
 
 VERSION = (0, 0, 3)
-__version__ = ".".join(map(str, VERSION[0:3])) + "".join(VERSION[3:])
-__author__ = "Ask Solem"
-__contact__ = "ask@rabbitmq.com"
-__homepage__ = "http://github.com/celery/cl/"
-__docformat__ = "restructuredtext en"
+__version__ = '.'.join(map(str, VERSION[0:3])) + ''.join(VERSION[3:])
+__author__ = 'Ask Solem'
+__contact__ = 'ask@celeryproject.org'
+__homepage__ = 'http://github.com/celery/cl/'
+__docformat__ = 'restructuredtext en'
 
 # -eof meta-
 
@@ -17,8 +17,8 @@ import sys
 from types import ModuleType
 
 all_by_module = {
-    "cl.actors": ["Actor"],
-    "cl.agents": ["Agent"],
+    'cl.actors': ['Actor'],
+    'cl.agents': ['Agent'],
 }
 
 object_origins = {}
@@ -39,10 +39,10 @@ class module(ModuleType):
 
     def __dir__(self):
         result = list(new_module.__all__)
-        result.extend(("__file__", "__path__", "__doc__", "__all__",
-                       "__docformat__", "__name__", "__path__", "VERSION",
-                       "__package__", "__version__", "__author__",
-                       "__contact__", "__homepage__", "__docformat__"))
+        result.extend(('__file__', '__path__', '__doc__', '__all__',
+                       '__docformat__', '__name__', '__path__', 'VERSION',
+                       '__package__', '__version__', '__author__',
+                       '__contact__', '__homepage__', '__docformat__'))
         return result
 
 # keep a reference to this module so that it's not garbage collected
@@ -50,13 +50,13 @@ old_module = sys.modules[__name__]
 
 new_module = sys.modules[__name__] = module(__name__)
 new_module.__dict__.update({
-    "__file__": __file__,
-    "__path__": __path__,
-    "__doc__": __doc__,
-    "__all__": tuple(object_origins),
-    "__version__": __version__,
-    "__author__": __author__,
-    "__contact__": __contact__,
-    "__homepage__": __homepage__,
-    "__docformat__": __docformat__,
-    "VERSION": VERSION})
+    '__file__': __file__,
+    '__path__': __path__,
+    '__doc__': __doc__,
+    '__all__': tuple(object_origins),
+    '__version__': __version__,
+    '__author__': __author__,
+    '__contact__': __contact__,
+    '__homepage__': __homepage__,
+    '__docformat__': __docformat__,
+    'VERSION': VERSION})

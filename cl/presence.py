@@ -1,4 +1,4 @@
-"""scs.presence"""
+"""cl.presence"""
 
 from __future__ import absolute_import, with_statement
 
@@ -23,28 +23,28 @@ from .utils import cached_property, first_or_raise, shortuuid
 
 
 class State(LogMixin):
-    logger_name = "cl.presence.state"
+    logger_name = 'cl.presence.state'
 
     def __init__(self, presence):
         self.presence = presence
         self._agents = defaultdict(lambda: {})
         self.heartbeat_expire = self.presence.interval * 2.5
-        self.handlers = {"online": self.when_online,
-                         "offline": self.when_offline,
-                         "heartbeat": self.when_heartbeat,
-                         "wakeup": self.when_wakeup}
+        self.handlers = {'online': self.when_online,
+                         'offline': self.when_offline,
+                         'heartbeat': self.when_heartbeat,
+                         'wakeup': self.when_wakeup}
 
     def can(self, actor):
         able = set()
         for id, state in self.agents.iteritems():
-            if actor in state["actors"]:
+            if actor in state['actors']:
                 # remove the . from the agent, which means that the
                 # agent is a clone of another agent.
-                able.add(id.partition(".")[0])
+                able.add(id.partition('.')[0])
         return able
 
     def meta_for(self, actor):
-        return self._agents["meta"][actor]
+        return self._agents['meta'][actor]
 
     def update_meta_for(self, agent, meta):
         self._agents[agent].update(meta=meta)
@@ -55,7 +55,7 @@ class State(LogMixin):
         # shuffle the agents so we don't get the same agent every time.
         shuffle(agent_ids)
         for agent in agent_ids:
-            d = agents[agent]["meta"]
+            d = agents[agent]['meta']
             for i, section in enumerate(sections):
                 d = d[section]
             if predicate(d):
@@ -67,9 +67,9 @@ class State(LogMixin):
         raise KeyError()
 
     def on_message(self, body, message):
-        event = body["event"]
+        event = body['event']
         self.handlers[event](**body)
-        self.debug("agents after event recv: %s", promise(lambda: self.agents))
+        self.debug('agents after event recv: %s', promise(lambda: self.agents))
 
     def when_online(self, agent=None, **kw):
         self._update_agent(agent, kw)
@@ -86,8 +86,8 @@ class State(LogMixin):
     def expire_agents(self):
         expired = set()
         for id, state in self._agents.iteritems():
-            if state and state.get("ts"):
-                if time() > state["ts"] + self.heartbeat_expire:
+            if state and state.get('ts'):
+                if time() > state['ts'] + self.heartbeat_expire:
                     expired.add(id)
 
         for id in expired:
@@ -99,7 +99,7 @@ class State(LogMixin):
 
     def _update_agent(self, agent, kw):
         kw = dict(kw)
-        meta = kw.pop("meta", None)
+        meta = kw.pop('meta', None)
         if meta:
             self.update_meta_for(agent, meta)
         self._agents[agent].update(kw)
@@ -108,7 +108,7 @@ class State(LogMixin):
         self._agents[agent].clear()
 
     def neighbors(self):
-        return {"agents": self.agents.keys()}
+        return {'agents': self.agents.keys()}
 
     @property
     def agents(self):
@@ -123,7 +123,7 @@ class Presence(ConsumerMixin):
     Event = Event
     State = State
 
-    exchange = Exchange("cl.agents", type="topic", auto_delete=True)
+    exchange = Exchange('cl.agents', type='topic', auto_delete=True)
     interval = 10
     _channel = None
     g = None
@@ -136,8 +136,8 @@ class Presence(ConsumerMixin):
         self.on_awake = on_awake
 
     def get_queue(self):
-        return Queue("cl.agents.%s" % (self.agent.id, ), self.exchange,
-                     routing_key="#", auto_delete=True)
+        return Queue('cl.agents.%s' % (self.agent.id, ), self.exchange,
+                     routing_key='#', auto_delete=True)
 
     def get_consumers(self, Consumer, channel):
         return [Consumer(self.get_queue(),
@@ -178,16 +178,16 @@ class Presence(ConsumerMixin):
         self.g = spawn(self.run)
 
     def send_online(self):
-        return self.announce(self.create_event("online"))
+        return self.announce(self.create_event('online'))
 
     def send_heartbeat(self):
-        return self.announce(self.create_event("heartbeat"))
+        return self.announce(self.create_event('heartbeat'))
 
     def send_offline(self):
-        return self.announce(self.create_event("offline"))
+        return self.announce(self.create_event('offline'))
 
     def wakeup(self):
-        event = self.create_event("wakeup")
+        event = self.create_event('wakeup')
         self.state.update_agent(**event)
         return self.announce(event)
 
@@ -196,7 +196,7 @@ class Presence(ConsumerMixin):
 
     @property
     def logger_name(self):
-        return "Presence#%s" % (shortuuid(self.agent.id), )
+        return 'Presence#%s' % (shortuuid(self.agent.id), )
 
     @property
     def should_stop(self):
@@ -211,7 +211,7 @@ class AwareAgent(Agent):
     def get_default_scatter_limit(self, actor):
         able = self.presence.can(actor)
         if not able:
-            warnings.warn("Presence running, but no agents available?!?")
+            warnings.warn('Presence running, but no agents available?!?')
         return len(able) if able else None
 
     def on_awake(self):
@@ -254,7 +254,7 @@ class AwareActorMixin(object):
 
     def wakeup_all_agents(self):
         if self.agent:
-            self.log.info("presence wakeup others")
+            self.log.info('presence wakeup others')
             self.agent.presence.wakeup()
 
 
