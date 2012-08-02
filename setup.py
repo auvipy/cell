@@ -10,12 +10,10 @@ if sys.version_info >= (3, 0):
     extra.update(use_2to3=True)
 elif sys.version_info <= (2, 6):
     tests_require.append('unittest2')
-elif sys.version_info <= (2, 5):
-    tests_require.append('simplejson')
 
 
-if sys.version_info < (2, 5):
-    raise Exception('cell requires Python 2.5 or higher.')
+if sys.version_info < (2, 6):
+    raise Exception('cell requires Python 2.6 or higher.')
 
 try:
     from setuptools import setup
@@ -128,7 +126,6 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.5',
         'Intended Audience :: Developers',
         'Topic :: Communications',
         'Topic :: System :: Distributed Computing',
