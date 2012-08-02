@@ -1,4 +1,4 @@
-from cl import Actor, Agent
+from cell import Actor, Agent
 
 from kombu import Connection
 

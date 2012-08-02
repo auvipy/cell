@@ -1,11 +1,11 @@
 ========================
- cl.utils
+ cell.exceptions
 ========================
 
 .. contents::
     :local:
-.. currentmodule:: cl.utils
+.. currentmodule:: cell.exceptions
 
-.. automodule:: cl.utils
+.. automodule:: cell.exceptions
     :members:
     :undoc-members:

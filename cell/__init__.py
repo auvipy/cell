@@ -6,7 +6,7 @@ VERSION = (0, 0, 3)
 __version__ = '.'.join(map(str, VERSION[0:3])) + ''.join(VERSION[3:])
 __author__ = 'Ask Solem'
 __contact__ = 'ask@celeryproject.org'
-__homepage__ = 'http://github.com/celery/cl/'
+__homepage__ = 'http://github.com/celery/cell/'
 __docformat__ = 'restructuredtext en'
 
 # -eof meta-
@@ -17,8 +17,8 @@ import sys
 from types import ModuleType
 
 all_by_module = {
-    'cl.actors': ['Actor'],
-    'cl.agents': ['Agent'],
+    'cell.actors': ['Actor'],
+    'cell.agents': ['Agent'],
 }
 
 object_origins = {}

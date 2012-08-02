@@ -1,4 +1,4 @@
-"""cl.bin.cl"""
+"""cell.bin.cell"""
 
 from __future__ import absolute_import
 
@@ -8,12 +8,12 @@ from .base import Command, Option
 from cyme import Agent
 from cyme.utils import instantiate
 
-__all__ = ['cl', 'main']
+__all__ = ['cell', 'main']
 
 DEFAULT_BROKER_URL = 'amqp://guest:guest@localhost:5672//'
 
 
-class cl(Command):
+class cell(Command):
     args = '<agent object names>'
 
     option_list = (
@@ -46,7 +46,7 @@ class cl(Command):
 
 
 def main(argv=None):
-    return cl().execute_from_commandline(argv)
+    return cell().execute_from_commandline(argv)
 
 
 if __name__ == '__main__':

@@ -10,7 +10,7 @@ this = os.path.dirname(os.path.abspath(__file__))
 # absolute, like shown here.
 sys.path.append(os.path.join(os.pardir, "tests"))
 sys.path.append(os.path.join(this, "_ext"))
-import cl
+import cell
 
 # General configuration
 # ---------------------
@@ -30,17 +30,17 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'cl'
-copyright = u'2011, Ask Solem & Contributors'
+project = u'cell'
+copyright = u'2011-2012, Ask Solem & Contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-version = ".".join(map(str, cl.VERSION[0:2]))
+version = ".".join(map(str, cell.VERSION[0:2]))
 # The full version, including alpha/beta/rc tags.
-release = cl.__version__
+release = cell.__version__
 
 exclude_trees = ['.build']
 
@@ -64,7 +64,7 @@ html_use_modindex = True
 html_use_index = True
 
 latex_documents = [
-  ('index', 'cl.tex', ur'cl Documentation',
+  ('index', 'cell.tex', ur'cell Documentation',
    ur'Ask Solem & Contributors', 'manual'),
 ]
 
@@ -79,5 +79,5 @@ html_sidebars = {
 ### Issuetracker
 
 issuetracker = "github"
-issuetracker_project = "ask/cl"
+issuetracker_project = "celery/cell"
 issuetracker_issue_pattern = r'[Ii]ssue #(\d+)'

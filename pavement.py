@@ -58,11 +58,11 @@ def upload_docs(options):
 
 @task
 def bump(options):
-    sh("contrib/release/bump_version.py cl/__init__.py README.rst")
+    sh("contrib/release/bump_version.py cell/__init__.py README.rst")
 
 @task
 def autodoc(options):
-    sh("contrib/release/doc4allmods cl")
+    sh("contrib/release/doc4allmods cell")
 
 
 @task
@@ -86,7 +86,7 @@ def readme(options):
 
 @task
 def bump(options):
-    sh("contrib/release/bump_version.py cl/__init__.py README.rst")
+    sh("contrib/release/bump_version.py cell/__init__.py README.rst")
 
 
 @task
@@ -112,7 +112,7 @@ def test(options):
 ])
 def flake8(options):
     noerror = getattr(options, "noerror", False)
-    sh("""flake8 cl""", ignore_error=noerror)
+    sh("""flake8 cell""", ignore_error=noerror)
 
 
 @task
@@ -121,7 +121,7 @@ def flake8(options):
 ])
 def flakeplus(options):
     noerror = getattr(options, "noerror", False)
-    sh("python contrib/release/flakeplus.py cl",
+    sh("python contrib/release/flakeplus.py cell",
        ignore_error=noerror)
 
 
@@ -140,7 +140,7 @@ def flakes(options):
 ])
 def pep8(options):
     noerror = getattr(options, "noerror", False)
-    return sh("""find cl -name "*.py" | xargs pep8 | perl -nle'\
+    return sh("""find cell -name "*.py" | xargs pep8 | perl -nle'\
             print; $a=1 if $_}{exit($a)'""", ignore_error=noerror)
 
 

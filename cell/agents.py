@@ -1,4 +1,4 @@
-"""cl.agents"""
+"""cell.agents"""
 
 from __future__ import absolute_import
 

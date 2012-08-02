@@ -15,7 +15,7 @@ elif sys.version_info <= (2, 5):
 
 
 if sys.version_info < (2, 5):
-    raise Exception('cl requires Python 2.5 or higher.')
+    raise Exception('cell requires Python 2.5 or higher.')
 
 try:
     from setuptools import setup
@@ -48,7 +48,7 @@ pats = {re_meta: add_default,
         re_vers: add_version,
         re_doc: add_doc}
 here = os.path.abspath(os.path.dirname(__file__))
-meta_fh = open(os.path.join(here, 'cl/__init__.py'))
+meta_fh = open(os.path.join(here, 'cell/__init__.py'))
 try:
     meta = {}
     for line in meta_fh:
@@ -66,7 +66,7 @@ packages, data_files = [], []
 root_dir = os.path.dirname(__file__)
 if root_dir != '':
     os.chdir(root_dir)
-src_dir = 'cl'
+src_dir = 'cell'
 
 
 def fullsplit(path, result=None):
@@ -98,7 +98,7 @@ for dirpath, dirnames, filenames in os.walk(src_dir):
 if os.path.exists('README.rst'):
     long_description = codecs.open('README.rst', 'r', 'utf-8').read()
 else:
-    long_description = 'See http://pypi.python.org/pypi/cl'
+    long_description = 'See http://pypi.python.org/pypi/cell'
 
 install_requires = ['kombu>=1.5.0']
 try:
@@ -107,7 +107,7 @@ except ImportError:
     install_requires.append('importlib')
 
 setup(
-    name='cl',
+    name='cell',
     version=meta['VERSION'],
     description=meta['doc'],
     author=meta['author'],
@@ -136,7 +136,7 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
     entry_points={
-        'console_scripts': ['cl = cl.bin.cl:main'],
+        'console_scripts': ['cell = cell.bin.cell:main'],
     },
     long_description=long_description,
     **extra)

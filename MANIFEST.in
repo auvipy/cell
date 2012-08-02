@@ -5,6 +5,6 @@ include MANIFEST.in
 include README.rst
 include README
 include setup.cfg
-recursive-include cl *.py
+recursive-include cell *.py
 recursive-include requirements *.txt
 recursive-include examples *.py

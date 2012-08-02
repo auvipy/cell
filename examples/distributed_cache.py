@@ -1,7 +1,7 @@
 from UserDict import DictMixin
 
-from cl import Actor, Agent
-from cl.utils import flatten
+from cell import Actor, Agent
+from cell.utils import flatten
 
 
 def first_reply(replies, key):

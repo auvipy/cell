@@ -1,4 +1,4 @@
-"""cl.presence"""
+"""cell.presence"""
 
 from __future__ import absolute_import, with_statement
 
@@ -23,7 +23,7 @@ from .utils import cached_property, first_or_raise, shortuuid
 
 
 class State(LogMixin):
-    logger_name = 'cl.presence.state'
+    logger_name = 'cell.presence.state'
 
     def __init__(self, presence):
         self.presence = presence

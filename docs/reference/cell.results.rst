@@ -1,11 +1,11 @@
 ========================
- cl.agents
+ cell.results
 ========================
 
 .. contents::
     :local:
-.. currentmodule:: cl.agents
+.. currentmodule:: cell.results
 
-.. automodule:: cl.agents
+.. automodule:: cell.results
     :members:
     :undoc-members:

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 verify_index() {
-    modules=$(grep "cl." "$1" | \
+    modules=$(grep "cell." "$1" | \
                 perl -ple's/^\s*|\s*$//g;s{\.}{/}g;')
     retval=0
     for module in $modules; do

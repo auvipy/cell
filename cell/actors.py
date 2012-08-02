@@ -1,4 +1,4 @@
-"""cl.actors"""
+"""cell.actors"""
 
 from __future__ import absolute_import, with_statement
 
@@ -42,7 +42,7 @@ class Actor(object):
 
     AsyncResult = AsyncResult
 
-    Error = exceptions.clError
+    Error = exceptions.CellError
     Next = exceptions.Next
     NoReplyError = exceptions.NoReplyError
     NoRouteError = exceptions.NoRouteError

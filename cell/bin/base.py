@@ -1,4 +1,4 @@
-"""cl.bin.base"""
+"""cell.bin.base"""
 
 from __future__ import absolute_import
 

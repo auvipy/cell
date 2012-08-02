@@ -1,9 +1,9 @@
-import cl
+import cell
 
 from celery import current_app as celery
 
 
-class BlenderActor(cl.Actor):
+class BlenderActor(cell.Actor):
     types = ('direct', 'round-robin')
 
     def __init__(self, connection=None, *args, **kwargs):
@@ -31,7 +31,7 @@ class BlenderActor(cl.Actor):
 blender = BlenderActor()
 
 
-class Agent(cl.Agent):
+class Agent(cell.Agent):
     actors = [blender]
 
     def __init__(self, connection=None, *args, **kwargs):

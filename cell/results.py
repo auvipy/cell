@@ -1,17 +1,17 @@
-"""cl.result"""
+"""cell.result"""
 
 from __future__ import absolute_import
 from __future__ import with_statement
 
 from kombu.pools import producers
 
-from .exceptions import clError, NoReplyError
+from .exceptions import CellError, NoReplyError
 
 __all__ = ['AsyncResult']
 
 
 class AsyncResult(object):
-    Error = clError
+    Error = CellError
     NoReplyError = NoReplyError
 
     def __init__(self, ticket, actor):

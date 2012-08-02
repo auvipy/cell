@@ -1,11 +1,11 @@
 ========================
- cl.models
+ cell.actors
 ========================
 
 .. contents::
     :local:
-.. currentmodule:: cl.models
+.. currentmodule:: cell.actors
 
-.. automodule:: cl.models
+.. automodule:: cell.actors
     :members:
     :undoc-members:

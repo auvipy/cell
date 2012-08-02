@@ -1,4 +1,4 @@
-"""cl.models"""
+"""cell.models"""
 
 from __future__ import absolute_import
 

@@ -1,11 +1,11 @@
 ========================
- cl.bin.cl
+ cell.g.eventlet
 ========================
 
 .. contents::
     :local:
-.. currentmodule:: cl.bin.cl
+.. currentmodule:: cell.g.eventlet
 
-.. automodule:: cl.bin.cl
+.. automodule:: cell.g.eventlet
     :members:
     :undoc-members:

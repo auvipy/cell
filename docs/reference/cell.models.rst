@@ -1,11 +1,11 @@
 ========================
- cl.bin.base
+ cell.models
 ========================
 
 .. contents::
     :local:
-.. currentmodule:: cl.bin.base
+.. currentmodule:: cell.models
 
-.. automodule:: cl.bin.base
+.. automodule:: cell.models
     :members:
     :undoc-members:

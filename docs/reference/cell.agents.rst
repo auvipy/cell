@@ -1,11 +1,11 @@
 ========================
- cl.g
+ cell.agents
 ========================
 
 .. contents::
     :local:
-.. currentmodule:: cl.g
+.. currentmodule:: cell.agents
 
-.. automodule:: cl.g
+.. automodule:: cell.agents
     :members:
     :undoc-members:

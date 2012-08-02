@@ -8,14 +8,14 @@
 .. toctree::
     :maxdepth: 1
 
-    cl.actors
-    cl.agents
-    cl.results
-    cl.exceptions
-    cl.presence
-    cl.models
-    cl.g
-    cl.g.eventlet
-    cl.utils
-    cl.bin.cl
-    cl.bin.base
+    cell.actors
+    cell.agents
+    cell.results
+    cell.exceptions
+    cell.presence
+    cell.models
+    cell.g
+    cell.g.eventlet
+    cell.utils
+    cell.bin.cell
+    cell.bin.base

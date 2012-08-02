@@ -1,11 +1,11 @@
 ========================
- cl.results
+ cell.g
 ========================
 
 .. contents::
     :local:
-.. currentmodule:: cl.results
+.. currentmodule:: cell.g
 
-.. automodule:: cl.results
+.. automodule:: cell.g
     :members:
     :undoc-members:

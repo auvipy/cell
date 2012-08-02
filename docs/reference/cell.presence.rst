@@ -1,11 +1,11 @@
 ========================
- cl.presence
+ cell.presence
 ========================
 
 .. contents::
     :local:
-.. currentmodule:: cl.presence
+.. currentmodule:: cell.presence
 
-.. automodule:: cl.presence
+.. automodule:: cell.presence
     :members:
     :undoc-members:
