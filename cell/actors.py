@@ -7,6 +7,9 @@ import traceback
 
 from itertools import count
 from operator import itemgetter
+from collections import deque
+
+from .utils.utils import lazy_property
 
 from kombu import Consumer, Exchange, Queue
 from kombu.common import (collect_replies, ipublish, isend_reply,
@@ -20,6 +23,9 @@ from . import __version__
 from . import exceptions
 from .results import AsyncResult
 from .utils import cached_property, shortuuid
+
+from .utils.custom_operators import Infix
+from .workflow.common import Mailbox
 
 __all__ = ['Actor']
 builtin_fields = {'ver': __version__}
@@ -36,7 +42,6 @@ class ActorType(type):
                 name = self.__class__.__name__
         return '<@actor: %s>' % (name, )
 
-
 class Actor(object):
     __metaclass__ = ActorType
 
@@ -47,6 +52,7 @@ class Actor(object):
     NoReplyError = exceptions.NoReplyError
     NoRouteError = exceptions.NoRouteError
     NotBoundError = exceptions.NotBoundError
+    DuplicateOutputError = exceptions.DuplicateOutputError
 
     #: Actor name.
     #: Defaults to the defined class name.
@@ -73,7 +79,7 @@ class Actor(object):
     #:         Send the message to an agent by round-robin.
     #:     * scatter
     #:         Send the message to all of the agents (broadcast).
-    types = ('direct', )
+    types = ('direct', 'scatter')
 
     #: Default serializer used to send messages and reply messages.
     serializer = 'json'
@@ -87,7 +93,10 @@ class Actor(object):
 
     #: Exchanged used for replies.
     reply_exchange = Exchange('cl.reply', 'direct')
-
+    
+    #: Exchanged used for forwarding/binding with other actors.
+    output_exchange = None
+    
     #: Should we retry publishing messages by default?
     #: Default: NO
     retry = None
@@ -113,7 +122,8 @@ class Actor(object):
                     'scatter': '__scatter__'}
 
     meta = {}
-
+    _inbox = lazy_property('_p_inbox', lambda self: Mailbox()) 
+     
     class state:
         pass
 
@@ -132,6 +142,9 @@ class Actor(object):
         if not self.exchange:
             self.exchange = Exchange('cl.%s' % (self.name, ), 'direct',
                                      auto_delete=True)
+        if not self.output_exchange:
+            self.output_exchange = Exchange('cl.%s.output' % (self.name), 
+                                            'fanout', auto_delete=True)
         logger_name = self.name
         if self.agent:
             logger_name = '%s#%s' % (self.name, shortuuid(self.agent.id, ))
@@ -171,8 +184,15 @@ class Actor(object):
                     'NoReplyError': self.NoReplyError})
         else:
             return contribute(self)
+        
+    def send(self, method, args={}, to = None, nowait=False, **kwargs):
+        if isinstance(to, Mailbox):
+            header = {'reply-to': self.mailbox} if nowait else {}
+            to.send(((method, args), header))
+        else:
+            self.send_old(method, args, to, nowait, **kwargs)
 
-    def send(self, method, args={}, to=None, nowait=False, **kwargs):
+    def send_old(self, method, args={}, to=None, nowait=False, **kwargs):
         """Call method on agent listening to ``routing_key``.
 
         See :meth:`call_or_cast` for a full list of supported
@@ -182,6 +202,7 @@ class Actor(object):
         will block and return the reply.
 
         """
+        
         if to is None:
             to = self.routing_key
         r = self.call_or_cast(method, args, routing_key=to,
@@ -255,7 +276,8 @@ class Actor(object):
 
         """
         return (nowait and self.cast or self.call)(method, args, **kwargs)
-
+    
+    
     def get_queues(self):
         return [self.type_to_queue[type]() for type in self.types]
 
@@ -292,6 +314,26 @@ class Actor(object):
         maybe_declare(props['exchange'], producer.channel)
         return producer.publish(body, **props)
 
+    def emit(self, method, args={}, before=None, retry=None,
+            retry_policy=None, type=None, exchange = None, **props):
+        """Send message to actor.  Discarding replies."""
+        retry = self.retry if retry is None else retry
+        body = {'class': self.name, 'method': method, 'args': args}
+        exchange = self.outbox
+        _retry_policy = self.retry_policy
+        if retry_policy:  # merge default and custom policies.
+            _retry_policy = dict(_retry_policy, **retry_policy)
+        type = 'scatter'
+        if type:
+            props.setdefault('routing_key', self.type_to_rkey[type])    
+        props.setdefault('serializer', self.serializer)
+        
+        props = dict(props, exchange=exchange, before=before)
+
+        ipublish(producers[self._connection], self._publish,
+                 (body, ), dict(props, exchange=exchange, before=before),
+                 **(retry_policy or {}))
+        
     def cast(self, method, args={}, before=None, retry=None,
             retry_policy=None, type=None, **props):
         """Send message to actor.  Discarding replies."""
@@ -374,7 +416,26 @@ class Actor(object):
                 message.ack()
 
         handle()
+        
+    def receive(self):
+        return self._inbox.receive
 
+    def on_message_new(self, body, message):
+        def handle():
+            # Do not ack the message if an exceptional error occurs,
+            # but do ack the message if SystemExit or KeyboardInterrupt
+            # is raised, as this is probably intended.
+            try:
+                self._inbox.send((body, message))
+            except Exception:
+                raise
+            except BaseException:
+                message.ack()
+                raise
+            else:
+                message.ack()
+        handle()
+            
     def _collect_replies(self, conn, channel, ticket, *args, **kwargs):
         kwargs.setdefault('timeout', self.default_timeout)
         if 'limit' not in kwargs:
@@ -384,13 +445,19 @@ class Actor(object):
 
     def lookup_action(self, name):
         try:
-            method = getattr(self.state, name)
+            if not name:
+                method =  self.default_receive
+            else: method = getattr(self.state, name)
         except AttributeError:
             raise KeyError(name)
         if not callable(method) or name.startswith('_'):
             raise KeyError(method)
         return method
 
+    def default_receive(self, msg_body):
+        """Override in the derived classes."""
+        pass
+    
     def _DISPATCH(self, body, ticket=None):
         """Dispatch message to the appropriate method
         in :attr:`state`, handle possible exceptions,
@@ -438,7 +505,7 @@ class Actor(object):
             r = {'nok': [safe_repr(exc), self._get_traceback(einfo)]}
             self.log.error('#%s <-- nok=%r', sticket, exc)
         return dict(self._default_fields, **r)
-
+        
     def _get_traceback(self, exc_info):
         return ''.join(traceback.format_exception(*exc_info))
 
@@ -459,7 +526,14 @@ class Actor(object):
     def __reduce__(self):
         return (self.__class__, (self.connection, self.id,
                                  self.name, self.exchange))
+    @property
+    def outbox(self):
+        return self.output_exchange.maybe_bind(self.connection.channel())
 
+    @property
+    def inbox(self):
+        return  self.exchange.bind(self.connection.channel())
+    
     @property
     def _connection(self):
         if not self.is_bound():
