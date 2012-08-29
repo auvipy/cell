@@ -114,11 +114,11 @@ class Workflow(object):
         [actor.start_remotely() for actor in actors] 
 
         
-def join(outbox_exchanges, inbox):
-    inbox.send('set_sources', {'sources': [outbox.name for outbox in outbox_exchanges]})
-    for outbox in outbox_exchanges:
+def join(outboxes, inbox):
+    inbox.send('set_sources', {'sources': [outbox.name for outbox in outboxes]})
+    for outbox in outboxes:
         maybe_declare(outbox, outbox.channel)
-        inbox.inbox.exchange_bind(outbox)     
+        inbox.inbox_scatter.exchange_bind(outbox)     
 
 def forward(outbox_exchange, inbox_exchange):
     maybe_declare(inbox_exchange, inbox_exchange.channel)
@@ -145,7 +145,8 @@ class FilterExample:
         wf = Workflow([filter1, filter2, printer, logger, collector])
         
         [filter1.outbox, filter2.outbox] |join| collector
-        collector.outbox |multiplex| [printer.inbox, logger.inbox]
+        collector.outbox |multiplex| [printer.inbox_scatter, logger.inbox_scatter]
+        
         
         filter1.call('filter', {'msg':'Ihu'})
         filter2.call('filter', {'msg' :'Ahu'})

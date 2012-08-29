@@ -25,7 +25,7 @@ from .results import AsyncResult
 from .utils import cached_property, shortuuid
 
 from .utils.custom_operators import Infix
-from .workflow.common import Mailbox
+from .workflow import common
 
 __all__ = ['Actor']
 builtin_fields = {'ver': __version__}
@@ -97,6 +97,12 @@ class Actor(object):
     #: Exchanged used for forwarding/binding with other actors.
     output_exchange = None
     
+    #: Exchanged used for forwarding/binding with other actors.
+    _scatter_exchange = None
+    
+    #: Exchanged used for forwarding/binding with other actors.
+    _rr_exchange = None
+    
     #: Should we retry publishing messages by default?
     #: Default: NO
     retry = None
@@ -137,6 +143,16 @@ class Actor(object):
         self.type_to_queue = {'direct': self.get_direct_queue,
                               'round-robin': self.get_rr_queue,
                               'scatter': self.get_scatter_queue}
+        
+        self.type_to_exchange = {'direct': self.inbox_direct,
+                                 'round-robin': self.inbox_rr,
+                                 'scatter': self.inbox_scatter}
+        
+        self.type_to_entity = 
+                    {'direct': self.type_to_queue['direct'],
+                    'round-robin': self.type_to_exchange['round-robin'],
+                    'scatter': self.type_to_exchange['scatter'],}
+         
         if self.default_fields is None:
             self.default_fields = {}
         if not self.exchange:
@@ -144,7 +160,7 @@ class Actor(object):
                                      auto_delete=True)
         if not self.output_exchange:
             self.output_exchange = Exchange('cl.%s.output' % (self.name), 
-                                            'fanout', auto_delete=True)
+                                            'direct', auto_delete=True)
         logger_name = self.name
         if self.agent:
             logger_name = '%s#%s' % (self.name, shortuuid(self.agent.id, ))
@@ -152,6 +168,20 @@ class Actor(object):
         self.state = self.contribute_to_state(self.construct_state())
         self.setup()
 
+    def get_binder(self, type):
+        if type == 'direct':
+            queue = self.type_to_queue[type]
+            maybe_declare(queue, queue.channel)
+            return queue.queue_bind
+        else: 
+            exchange = self.type_to_exchange[type]
+            maybe_declare(exchange, exchange.channel)
+            return exchange.exchange_bind
+
+    def add_binding(self, destination, routing_key = '', type = None):
+        binder = self.get_binder(type)
+        binder(destination, routing_key)
+    
     def setup(self):
         pass
 
@@ -276,7 +306,23 @@ class Actor(object):
 
         """
         return (nowait and self.cast or self.call)(method, args, **kwargs)
+
+    def get_scatter_exchange(self):
+        """Returns a unique exchange that can be used to listen for messages
+        to this class."""
+        return Exchange('cl.scatter.%s' % (self.name, ), 
+                        'fanout', auto_delete=True)
     
+    def get_rr_exchange(self):
+        """Returns a unique exchange that can be used to listen for messages
+        to this class."""
+        return Exchange('cl.rr.%s' % (self.name, ), 
+                        'fanout', auto_delete=True)
+
+    def get_direct_exchange(self):
+        """Returns a unique exchange that can be used to listen for messages
+        to this class."""
+        return self.exchange
     
     def get_queues(self):
         return [self.type_to_queue[type]() for type in self.types]
@@ -288,13 +334,11 @@ class Actor(object):
                      auto_delete=True)
 
     def get_scatter_queue(self):
-        return Queue('%s.%s.scatter' % (self.name, self.id), self.exchange,
-                     routing_key=self.type_to_rkey['scatter'],
+        return Queue('%s.%s.scatter' % (self.name, self.id), self.scatter_exchange,
                      auto_delete=True)
 
     def get_rr_queue(self):
-        return Queue(self.exchange.name + '.rr', self.exchange,
-                     routing_key=self.type_to_rkey['round-robin'],
+        return Queue(self.rr_exchange.name + '.rr', self.rr_exchange,
                      auto_delete=True)
 
     def get_reply_queue(self, ticket):
@@ -316,16 +360,15 @@ class Actor(object):
 
     def emit(self, method, args={}, before=None, retry=None,
             retry_policy=None, type=None, exchange = None, **props):
-        """Send message to actor.  Discarding replies."""
+        """Send message to actor's outbox."""
         retry = self.retry if retry is None else retry
         body = {'class': self.name, 'method': method, 'args': args}
         exchange = self.outbox
         _retry_policy = self.retry_policy
         if retry_policy:  # merge default and custom policies.
             _retry_policy = dict(_retry_policy, **retry_policy)
-        type = 'scatter'
-        if type:
-            props.setdefault('routing_key', self.type_to_rkey[type])    
+        
+        props.setdefault('routing_key', self.default_routing_key)    
         props.setdefault('serializer', self.serializer)
         
         props = dict(props, exchange=exchange, before=before)
@@ -333,22 +376,25 @@ class Actor(object):
         ipublish(producers[self._connection], self._publish,
                  (body, ), dict(props, exchange=exchange, before=before),
                  **(retry_policy or {}))
+    
+    def get_exchange_by_type(self, type):
+        return self.type_to_exchange[type]
         
     def cast(self, method, args={}, before=None, retry=None,
             retry_policy=None, type=None, **props):
         """Send message to actor.  Discarding replies."""
         retry = self.retry if retry is None else retry
         body = {'class': self.name, 'method': method, 'args': args}
-        exchange = self.exchange
+        
         _retry_policy = self.retry_policy
         if retry_policy:  # merge default and custom policies.
             _retry_policy = dict(_retry_policy, **retry_policy)
 
-        if type:
-            props.setdefault('routing_key', self.type_to_rkey[type])
+        #if type:
+        #    props.setdefault('routing_key', self.type_to_rkey[type])
         props.setdefault('routing_key', self.default_routing_key)
         props.setdefault('serializer', self.serializer)
-
+        exchange = self.get_exchange_by_type(type)
         props = dict(props, exchange=exchange, before=before)
 
         ipublish(producers[self._connection], self._publish,
@@ -417,9 +463,6 @@ class Actor(object):
 
         handle()
         
-    def receive(self):
-        return self._inbox.receive
-
     def on_message_new(self, body, message):
         def handle():
             # Do not ack the message if an exceptional error occurs,
@@ -531,8 +574,25 @@ class Actor(object):
         return self.output_exchange.maybe_bind(self.connection.channel())
 
     @property
-    def inbox(self):
-        return  self.exchange.bind(self.connection.channel())
+    def inbox_rr(self):
+        if not self._rr_exchange:
+            self._rr_exchange  = self.get_direct_exchange() 
+            self._rr_exchange.maybe_bind(self.connection.channel())
+        return self._rr_exchange
+    
+    @property
+    def inbox_direct(self):
+        if not self.exchange:
+            self.exchange  = self.get_direct_exchange() 
+            self.exchange.maybe_bind(self.connection.channel())
+        return self.exchange
+    
+    @property
+    def inbox_scatter(self):
+        if not self._scatter_exchange:
+            self._scatter_exchange  = self.get_scatter_exchange() 
+            self._scatter_exchange.maybe_bind(self.connection.channel())
+        return self._scatter_exchange
     
     @property
     def _connection(self):
