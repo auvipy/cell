@@ -17,6 +17,7 @@ class AsyncResult(object):
     def __init__(self, ticket, actor):
         self.ticket = ticket
         self.actor = actor
+        self._result = None
 
     def _first(self, replies):
         if replies is not None:
@@ -24,7 +25,14 @@ class AsyncResult(object):
             if replies:
                 return replies[0]
         raise self.NoReplyError('No reply received within time constraint')
-
+    
+    @property
+    def result(self):
+        if not self._result:
+            self._result = self.get()
+        return self.result
+             
+    
     def get(self, **kwargs):
         return self._first(self.gather(**dict(kwargs, limit=1)))
 
