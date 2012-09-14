@@ -4,12 +4,19 @@ from cell import Actor
 from kombu import Connection, Producer
 from cell.utils.custom_operators import Infix 
 from kombu.common import maybe_declare
+from celery.worker.actorsbootstrap import ActorsManager
+from kombu.utils import uuid
+import time
+
 my_app = celery.Celery(broker='pyamqp://guest@localhost//')
             
 #celery.Celery().control.broadcast('shutdown')
 #from examples.workflow import FilterExample
+#from examples.workflow import actors_mng
 #f = FilterExample()
 #f.start()
+#from examples.workflow import TestActor
+#t = TestActor()
 
 """ Simple scenario.
 We have a Filter that filter collections and we want every result
@@ -23,38 +30,32 @@ class WorkflowActor(Actor):
     def __init__(self, connection=None, *args, **kwargs):
         super(WorkflowActor, self).__init__(
                 connection or my_app.broker_connection(), *args, **kwargs)
-        
-    def start_remotely(self):
-        name = "%s.%s"%(self.__class__.__module__, 
-                        self.__class__.__name__)
-        print name
-        my_app.control.start_actor(name)
-
+    class state(Actor.state):
+        pass    
+    def become_remote(self, actor):
+        return self.add_actor(actor)
 
 class TrueFilter(WorkflowActor):
-    default_routing_key = 'filter'
+    #default_routing_key = 'filter'
         
     class state(WorkflowActor.state):
         def filter(self,  msg):
             print 'Msg:%s received in filter' %(msg)
-            self.actor.emit('notify', {'msg': msg}, 
-                            routing_key = '__scatter__')
+            self.actor.emit('notify', {'msg': msg})
 
 
 class FalseFilter(WorkflowActor):
-    default_routing_key = 'filter'
+    #default_routing_key = 'filter'
         
     class state(WorkflowActor.state):
         def filter(self,  msg):
             print 'Msg:%s received in filter' %(msg)
-            self.actor.emit('notify', {'msg': msg}, 
-                            routing_key = '__scatter__')
+            self.actor.emit('notify', {'msg': msg})
 
 
 class Joiner(WorkflowActor):
-    default_routing_key = 'collector'
+    #default_routing_key = 'collector'
     def __init__(self, connection=None, *args, **kwargs):
-        self.sources = []
         super(Joiner, self).__init__(
                 connection or my_app.broker_connection(), *args, **kwargs)
     
@@ -72,19 +73,19 @@ class Joiner(WorkflowActor):
                                                           msg)
             self.count+=1
             if self.count == len(self.sources):
-                self.actor.emit('set_ready', {'msg':'ready'}, 
-                                routing_key = '__scatter__')
+                print 'I am sending the message to whoever is subscribed'
+                self.actor.emit('set_ready', {'msg':'ready'})
                 self.count = 0
 
                       
 class GuardedActor(WorkflowActor):
-    default_routing_key = 'waiter'
+    #default_routing_key = 'waiter'
     def __init__(self, connection=None, *args, **kwargs):
         self.ready = False
         super(GuardedActor, self).__init__(
                 connection or my_app.broker_connection(), *args, **kwargs)
     
-    class state():
+    class state(WorkflowActor.state):
         def set_ready(self,  msg):
             self.ready = True
             self.do_smth()
@@ -94,14 +95,15 @@ class GuardedActor(WorkflowActor):
 
         
 class Printer(GuardedActor):
-    default_routing_key = 'printer'
+    #default_routing_key = 'printer'
+    types = ('scatter', 'round-robin', 'direct')
     class state(GuardedActor.state):
         def do_smth(self):
             print 'I am a printer'
 
             
 class Logger(GuardedActor):
-    default_routing_key = 'logger'
+    #default_routing_key = 'logger'
     def default_receive(self, msg):
         print msg
     class state(GuardedActor.state):
@@ -111,25 +113,37 @@ class Logger(GuardedActor):
 class Workflow(object):
     actors = []
     def __init__(self, actors):
-        [actor.start_remotely() for actor in actors] 
-
-        
-def join(outboxes, inbox):
-    inbox.send('set_sources', {'sources': [outbox.name for outbox in outboxes]})
-    for outbox in outboxes:
-        maybe_declare(outbox, outbox.channel)
-        inbox.inbox_scatter.exchange_bind(outbox)     
-
-def forward(outbox_exchange, inbox_exchange):
-    maybe_declare(inbox_exchange, inbox_exchange.channel)
-    maybe_declare(outbox_exchange, outbox_exchange.channel)
-    inbox_exchange.exchange_bind(outbox_exchange)
+        self.actors_mng = ActorsManager(connection = \
+                                        my_app.broker_connection(), 
+                                        app = my_app)
+        self.actors = actors
     
-def multilplex(outbox_exchange, inbox_exchanges):
-    maybe_declare(outbox_exchange, outbox_exchange.channel)
-    for inbox in inbox_exchanges:
-        maybe_declare(inbox, inbox.channel)
-        inbox.exchange_bind(outbox_exchange) 
+    def start(self):
+        for actor in self.actors:
+            yield self.actors_mng.add_actor(actor)   
+
+def join(outboxes, inbox):
+    inbox.wait_to_start()
+    inbox.call('set_sources', {'sources': [outbox.name for outbox in outboxes]}, 
+               nowait = False)
+    print 'send set_sources to collector'
+    for outbox in outboxes:
+        inbox.add_binding(outbox.outbox, 
+                          routing_key = outbox.routing_key, 
+                          inbox_type='direct')     
+
+def forward(source_actor, dest_actor):
+    dest_actor.wait_to_start()
+    dest_actor.add_binding(source_actor.outbox, 
+                           routing_key = source_actor.routing_key, 
+                           inbox_type = 'direct')
+    
+def multilplex(outbox, inboxes):
+    for inbox in inboxes:
+        inbox.wait_to_start()
+        inbox.add_binding(outbox.outbox, 
+                                routing_key = outbox.routing_key,
+                                inbox_type = 'direct') 
         
 join = Infix(join)
 
@@ -141,15 +155,22 @@ class FilterExample:
     def start(self):
         filter1, filter2, printer  = TrueFilter(), FalseFilter(), Printer(),
         logger, collector = Logger(), Joiner()   
-        
+        print 'collector_id before start:' + collector.id
         wf = Workflow([filter1, filter2, printer, logger, collector])
+        [filter1, filter2, printer, logger, collector] = list(wf.start())
+        print 'collector_id after start:' + collector.id
         
-        [filter1.outbox, filter2.outbox] |join| collector
-        collector.outbox |multiplex| [printer.inbox_scatter, logger.inbox_scatter]
-        
+        [filter1, filter2] |join| collector
+        collector |multiplex| [printer, logger]
         
         filter1.call('filter', {'msg':'Ihu'})
         filter2.call('filter', {'msg' :'Ahu'})
 
+printer_name = 'examples.workflow.Printer' 
+actors_mng = ActorsManager(connection = my_app.broker_connection(), 
+                              app = my_app)
+
 if __name__ == '__main__':        
-        FilterExample().start()
+        #FilterExample().start()
+        printer = Printer()
+        actors_mng.add_actor(printer)
