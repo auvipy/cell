@@ -123,17 +123,6 @@ class Server(Actor):
         finally:
             self.stop(*args, **kw)
 
-class Forwarder(Actor):
-    
-    def __init__(self, input_actors = None, output_actors = None):
-        self.input = input_actors
-        self.output = output_actors
-    
-    def  main(self):
-        body, message = yield self.receive()
-        self.true_channel.send(body)
-        self.false_channel.send(body)
-
 class RPCClient(Actor):
       
     def __init__(self, server):
