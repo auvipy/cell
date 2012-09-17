@@ -53,7 +53,6 @@ class Actor(object):
     NoReplyError = exceptions.NoReplyError
     NoRouteError = exceptions.NoRouteError
     NotBoundError = exceptions.NotBoundError
-    DuplicateOutputError = exceptions.DuplicateOutputError
     
     #: Actor name.
     #: Defaults to the defined class name.
