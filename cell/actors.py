@@ -59,7 +59,7 @@ class Actor(object):
     #: Defaults to the defined class name.
     name = None
 
-    #: Default exchange used for messages to this actor.
+    #: Default exchange(direct) used for messages to this actor.
     exchange = None
 
     #: Default routing key used if no ``to`` argument passed.
@@ -92,16 +92,16 @@ class Actor(object):
     #: Time in seconds as a float which after replies expires.
     reply_expires = 100.0
 
-    #: Exchanged used for replies.
+    #: Exchange used for replies.
     reply_exchange = Exchange('cl.reply', 'direct')
     
-    #: Exchanged used for forwarding/binding with other actors.
+    #: Exchange used for forwarding/binding with other actors.
     output_exchange = None
     
-    #: Exchanged used for forwarding/binding with other actors.
+    #: Exchange used for receiving broadcast commands for this actor type.
     _scatter_exchange = None
     
-    #: Exchanged used for forwarding/binding with other actors.
+    #: Exchange used for round-robin commands for this actor type.
     _rr_exchange = None
     
     #: Should we retry publishing messages by default?
@@ -132,7 +132,7 @@ class Actor(object):
      
     class state:
         def add_binding(self, source, routing_key = '',
-                          inbox_type = ACT_TYPE.DIRECT):
+                        inbox_type = ACT_TYPE.DIRECT):
             source_exchange = Exchange(**source)
             binder = self.actor.get_binder(inbox_type)
             #@TODO: It is correct to declare the destination?
