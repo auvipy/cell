@@ -44,7 +44,3 @@ class NotBoundError(Exception):
 class NoRouteError(Exception):
     """Presence: No known route for wanted item."""
     pass
-
-class DuplicateOutputError(Exception):
-    """The output is already declared."""
-    pass
