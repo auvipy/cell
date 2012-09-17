@@ -133,8 +133,6 @@ class Actor(object):
     class state:
         def add_binding(self, source, routing_key = '',
                           inbox_type = ACT_TYPE.DIRECT):
-            print 'In add_binding'
-            print source
             source_exchange = Exchange(**source)
             binder = self.actor.get_binder(inbox_type)
             #@TODO: It is correct to declare the destination?
@@ -358,10 +356,7 @@ class Actor(object):
     def Consumer(self, channel, **kwargs):
         """Returns a :class:`kombu.Consumer` instance for this Actor."""
         kwargs.setdefault('no_ack', self.no_ack)
-        queues = self.get_queues()
-        for q in queues: 
-            print q
-        return Consumer(channel, queues,
+        return Consumer(channel, self.get_queues(),
                         callbacks=[self.on_message], **kwargs)
 
     def _publish(self, body, producer, before=None, **props):
@@ -409,7 +404,7 @@ class Actor(object):
         props.setdefault('routing_key', self.routing_key)
         props.setdefault('serializer', self.serializer)
         exchange = self.type_to_exchange[type]()
-        print 'exchange we are sending to is:', exchange.name
+        print 'exchange we are sending to is:', exchange.name)
         props = dict(props, exchange=exchange, before=before)
 
         ipublish(producers[self._connection], self._publish,
@@ -439,13 +434,10 @@ class Actor(object):
         except self.Next:
             # don't reply, delegate to other agent.
             pass
-        else:
-            print 'Still no error'
+        else:           
             self.reply(message, r)
 
     def reply(self, req, body, **props):
-        print 'RUMI: before reply, still no error'
-        print self._connection
         return isend_reply(producers[self._connection],
                            self.reply_exchange, req, body, props)
 
@@ -471,8 +463,7 @@ class Actor(object):
             # is raised, as this is probably intended.
             try:
                 handler(body, message)
-            except Exception as ex:
-                print 'Exception is', ex
+            except Exception:               
                 raise
             except BaseException:
                 message.ack()
