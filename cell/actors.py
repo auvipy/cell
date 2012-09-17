@@ -21,9 +21,6 @@ from . import exceptions
 from .results import AsyncResult
 from .utils import cached_property, shortuuid
 
-from .utils.custom_operators import Infix
-from .workflow.common import Mailbox
-
 __all__ = ['Actor']
 builtin_fields = {'ver': __version__}
  
@@ -233,13 +230,6 @@ class Actor(object):
                     'NoReplyError': self.NoReplyError})
         else:
             return contribute(self)
-        
-    def send_new(self, method, args={}, to = None, nowait=False, **kwargs):
-        if isinstance(to, Mailbox):
-            header = {'reply-to': self.mailbox} if nowait else {}
-            to.send(((method, args), header))
-        else:
-            self.send_old(method, args, to, nowait, **kwargs)
 
     def send(self, method, args={}, to=None, nowait=False, **kwargs):
         """Call method on agent listening to ``routing_key``.
