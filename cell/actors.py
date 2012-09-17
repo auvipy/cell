@@ -403,7 +403,7 @@ class Actor(object):
         props.setdefault('routing_key', self.routing_key)
         props.setdefault('serializer', self.serializer)
         exchange = self.type_to_exchange[type]()
-        print 'exchange we are sending to is:', exchange.name)
+        print 'exchange we are sending to is:', exchange.name
         props = dict(props, exchange=exchange, before=before)
 
         ipublish(producers[self._connection], self._publish,
