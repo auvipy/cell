@@ -378,8 +378,9 @@ class Actor(object):
         props.setdefault('serializer', self.serializer)
         
         props = dict(props, exchange=exchange, before=before)
-
-        ipublish(producers[self._connection], self._publish,
+        con = producers[self._connection]
+        print'connection is:', con
+        ipublish(con, self._publish,
                  (body, ), dict(props, exchange=exchange, before=before),
                  **(retry_policy or {}))
         
@@ -564,12 +565,13 @@ class Actor(object):
                                  self.name, self.exchange))    
     @property
     def outbox(self):
-        return self.output_exchange.maybe_bind(self.connection.default_channel)
+        return self.output_exchange
+        #return self.output_exchange.maybe_bind(self.connection.default_channel)
 
     def _inbox_rr(self):
         if not self._rr_exchange:
             self._rr_exchange  = self.get_rr_exchange() 
-            self._rr_exchange.maybe_bind(self.connection.default_channel)
+            #self._rr_exchange.maybe_bind(self._connection.default_channel)
         return self._rr_exchange
     
     @property
@@ -579,7 +581,7 @@ class Actor(object):
     def _inbox_direct(self):
         if not self.exchange:
             self.exchange  = self.get_direct_exchange() 
-            self.exchange.maybe_bind(self.connection.default_channel)
+            #self.exchange.maybe_bind(self._connection.default_channel)
         return self.exchange
     
     @property
@@ -589,7 +591,7 @@ class Actor(object):
     def _inbox_scatter(self):
         if not self._scatter_exchange:
             self._scatter_exchange  = self.get_scatter_exchange() 
-            self._scatter_exchange.maybe_bind(self.connection.default_channel)
+            #self._scatter_exchange.maybe_bind(self._connection.default_channel)
         return self._scatter_exchange
     
     @property
