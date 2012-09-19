@@ -1,4 +1,3 @@
-import cell
 import celery
 from cell import Actor
 from kombu import Connection, Producer
@@ -159,6 +158,8 @@ class FilterExample:
         wf = Workflow([filter1, filter2, printer, logger, collector])
         [filter1, filter2, printer, logger, collector] = list(wf.start())
         print 'collector_id after start:' + collector.id
+        
+        time.sleep(2)
         
         [filter1, filter2] |join| collector
         collector |multiplex| [printer, logger]
