@@ -6,6 +6,8 @@ from kombu.common import maybe_declare
 from celery.worker.actorsbootstrap import ActorsManager
 from kombu.utils import uuid
 import time
+from cell.workflow.entities import Workflow
+from celery.utils.imports import instantiate
 
 my_app = celery.Celery(broker='pyamqp://guest@localhost//')
             
@@ -136,6 +138,11 @@ def forward(source_actor, dest_actor):
     dest_actor.add_binding(source_actor.outbox, 
                            routing_key = source_actor.routing_key, 
                            inbox_type = 'direct')
+
+def stop_forward(source_actor, dest_actor):
+    dest_actor.remove_binding(source_actor.outbox, 
+                              routing_key = source_actor.routing_key, 
+                              inbox_type = 'direct')
     
 def multilplex(outbox, inboxes):
     for inbox in inboxes:
@@ -143,13 +150,22 @@ def multilplex(outbox, inboxes):
         inbox.add_binding(outbox.outbox, 
                                 routing_key = outbox.routing_key,
                                 inbox_type = 'direct') 
-        
+            
 join = Infix(join)
 
 forward = Infix(forward)
 
 multiplex = Infix(multilplex)
 
+stop_forward = Infix(stop_forward)
+
+def start_group(actor_type, count):
+    actor_group = []
+    [actor_group.append(instantiate(actor_type)) for _ in range(0, count)]
+    wf = Workflow(actor_group)
+    remote_group = list(wf.start())
+    return remote_group    
+        
 class FilterExample:
     def start(self):
         filter1, filter2, printer  = TrueFilter(), FalseFilter(), Printer(),

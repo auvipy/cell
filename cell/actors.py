@@ -138,6 +138,13 @@ class Actor(object):
             maybe_declare(source_exchange, self.actor.connection.default_channel)
             binder(exchange=source_exchange, routing_key=routing_key)
                 
+        def remove_binding(self, source, routing_key = '',
+                           inbox_type = ACT_TYPE.DIRECT):
+            source_exchange = Exchange(**source)
+            unbinder = self.actor.get_unbinder(inbox_type)
+            unbinder(exchange=source_exchange, routing_key=routing_key)
+        
+        
     def __init__(self, connection=None, id=None, name=None, exchange=None,
             logger=None, agent=None, **kwargs):
         self.connection = connection
@@ -147,8 +154,7 @@ class Actor(object):
         self.agent = agent
         
         if not self.exchange:
-            self.exchange = Exchange('cl.%s' % (self.name, ), 'direct',
-                                     auto_delete=True)
+            self.exchange = Exchange('cl.%s' % (self.name, ), 'direct')
      
         type_map = {ACT_TYPE.DIRECT: 
                         [self.get_direct_queue, self._inbox_direct],
@@ -164,8 +170,7 @@ class Actor(object):
             self.default_fields = {}
         
         if not self.output_exchange:
-            self.output_exchange = Exchange('cl.%s.output' % (self.name), 
-                                            'topic', auto_delete=True)
+            self.output_exchange = Exchange('cl.%s.output' % (self.name), 'topic')
         logger_name = self.name
         if self.agent:
             logger_name = '%s#%s' % (self.name, shortuuid(self.agent.id, ))
@@ -185,13 +190,30 @@ class Actor(object):
         maybe_declare(entity, entity.channel)
         return binder
           
-        
+    def get_unbinder(self, type):
+        if type == ACT_TYPE.DIRECT:
+            entity = self.type_to_queue[type]()
+            unbinder = entity.unbind
+        else: 
+            entity = self.type_to_exchange[type]()
+            unbinder = entity.exchange_unbind
+        entity = entity.maybe_bind(self.connection.default_channel)
+        #@TODO: Declare probably should not happened here
+        return unbinder
+    
     def add_binding(self, source, routing_key = '',     
                     inbox_type = ACT_TYPE.DIRECT, send_to = ACT_TYPE.DIRECT):
               
         self.call('add_binding', {'source': source.as_dict(), 
                                   'routing_key': routing_key, 
                                   'inbox_type':  inbox_type}, 
+                  type = send_to)
+    
+    def remove_binding(self, source, routing_key = '', 
+                       inbox_type = ACT_TYPE.DIRECT, send_to = ACT_TYPE.DIRECT):
+        self.call('remove_binding', {'source': source.as_dict(), 
+                                     'routing_key': routing_key, 
+                                     'inbox_type':  inbox_type}, 
                   type = send_to)
     
     def setup(self):
@@ -316,14 +338,12 @@ class Actor(object):
     def get_scatter_exchange(self):
         """Returns a unique exchange that can be used to listen for messages
         to this class."""
-        return Exchange('cl.scatter.%s' % (self.name, ), 
-                        'fanout', auto_delete=True)
+        return Exchange('cl.scatter.%s' % (self.name, ), 'fanout')
     
     def get_rr_exchange(self):
         """Returns a unique exchange that can be used to listen for messages
         to this class."""
-        return Exchange('cl.rr.%s' % (self.name, ), 
-                        'fanout', auto_delete=True)
+        return Exchange('cl.rr.%s' % (self.name, ), 'fanout')
 
     def get_direct_exchange(self):
         """Returns a unique exchange that can be used to listen for messages
