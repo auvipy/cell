@@ -8,8 +8,7 @@ import traceback
 from itertools import count
 from operator import itemgetter
 
-from .monads import callcc, done, ContinuationMonad, do, mreturn, MonadReturn
-from .utils.utils import lazy_property
+#from .monads import callcc, done, ContinuationMonad, do, mreturn, MonadReturn
 
 from kombu import Consumer, Exchange, Queue
 from kombu.common import (collect_replies, ipublish, isend_reply,
@@ -19,18 +18,17 @@ from kombu.pools import producers
 from kombu.utils import kwdict, reprcall, reprkwargs
 from kombu.utils.encoding import safe_repr
 
-from . import __version__
-from . import exceptions
-from .results import AsyncResult
-from .utils import cached_property, shortuuid
+from .. import __version__
+from ..results import AsyncResult
+from ..utils import cached_property, shortuuid
 
-from .utils.custom_operators import Infix
-from .actors import Actor
+from ..utils.custom_operators import Infix
+from ..actors import Actor
 
 __all__ = ['Workflow']
 builtin_fields = {'ver': __version__}
 
-from gevent import queue as gqueue
+#from gevent import queue as gqueue
 
 
 class Workflow(object):
@@ -82,9 +80,6 @@ class Workflow(object):
         Builds a unique conversation id.
         """
         return uuid()
-
-class LocalActor(Mailbox):
-    pass
     
 class Server(Actor):
     """An actor which responds to the call protocol by looking for the
