@@ -191,3 +191,31 @@ if __name__ == '__main__':
         #FilterExample().start()
         printer = Printer()
         actors_mng.add_actor(printer)
+        
+"""
+Example usage:
+>>from examples.workflow import Printer, Logger, actors_mng
+>>pr = Printer()
+Start 2 actors of type Printer remotely 
+>>rpr1 = actors_mng.add_actor(pr)
+>>rpr2 = actors_mng.add_actor(pr)
+Use remote actor 
+>>rpr.call('do_smth')
+>>rpr.scatter('do_smth')
+>>rpr.throw('do_smth')
+Start another actor
+>>log = Logger
+>>rlog = actors_mng.add_actor(log)
+Bind two actors together
+>>from examples.workflow import forward, stop_forward
+>>rlog |forward| rpr1
+Send to the output of ane actor and checks the binded actor receives is
+>>rlog.emit('do_smth') # here do_smth of rpt1 should be invoked
+Unbind actors
+>>rlog |stop_forward| rpr1
+Stop actors
+>>actors_mng.stop_actor_by_id(rlog.id)
+>>actors_mng.stop_actor_by_id(rpr1.id)
+>>actors_mng.stop_actor_by_id(rpr2.id)
+"""        
+        
