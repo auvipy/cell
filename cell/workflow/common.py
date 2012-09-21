@@ -13,20 +13,22 @@ class Mailbox(object):
         self.handlers = deque()
 
     def send(self, message):
-        if self.handlers:
+        try:
             handler = self.handlers.popleft()
-            handler(message)()
-        else:
+        except IndexError:
             self.messages.append(message)
+        else:
+            handler(message)()
 
     def receive(self):
         return callcc(self.react)
 
     @do(ContinuationMonad)
     def react(self, handler):
-        if self.messages:
+        try:
             message = self.messages.popleft()
-            yield handler(message)
-        else:
+        except IndexError:
             self.handlers.append(handler)
             done(ContinuationMonad.zero())
+        else:
+            yield handler(message)
