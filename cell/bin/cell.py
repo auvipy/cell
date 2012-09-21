@@ -35,8 +35,6 @@ class cell(Command):
         if not actors:
             self.exit_usage('No actor specified')
 
-        id = kwargs.get('id')
-        loglevel = kwargs.get('loglevel')
         actors = [instantiate(actor) for actor in list(actors)]
 
         connection = Connection(kwargs.get('broker'))

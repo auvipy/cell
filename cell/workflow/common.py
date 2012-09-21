@@ -1,8 +1,14 @@
-from .monads import callcc, done, ContinuationMonad, do, mreturn, MonadReturn
+from __future__ import absolute_import
+
 from collections import deque
+
+from .monads import callcc, done, ContinuationMonad, do
+
+
 class Mailbox(object):
-    def __init__(self, name = None):
-        self.name = name 
+
+    def __init__(self, name=None):
+        self.name = name
         self.messages = deque()
         self.handlers = deque()
 

@@ -25,14 +25,13 @@ class AsyncResult(object):
             if replies:
                 return replies[0]
         raise self.NoReplyError('No reply received within time constraint')
-    
+
     @property
     def result(self):
         if not self._result:
             self._result = self.get()
         return self.result
-             
-    
+
     def get(self, **kwargs):
         return self._first(self.gather(**dict(kwargs, limit=1)))
 
