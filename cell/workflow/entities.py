@@ -1,40 +1,21 @@
-"""cell.actors"""
-
-from __future__ import absolute_import, with_statement
+from __future__ import absolute_import
 
 from kombu.common import uuid
 
 from cell.results import AsyncResult
-
 from cell.actors import Actor
 
-from .mondas import mreturn, MonadReturn
+from .monads import mreturn, MonadReturn
 
 __all__ = ['Workflow']
 
 
 class Workflow(object):
 
-    def __init__(self, protocol, wf_id=None):
+    def __init__(self, protocol, id=None):
         self._wf_table = {}
-        self._protocol = protocol
-        self._id = wf_id if wf_id else self._build_conv_id()
-
-    @property
-    def protocol(self):
-        return self._protocol
-
-    @protocol.setter  # noqa
-    def protocol(self, value):
-        self._protocol = value
-
-    @property
-    def id(self):
-        return self._id
-
-    @id.setter  # noqa
-    def id(self, value):
-        self._id = value
+        self.protocol = protocol
+        self.id = id if id else self._build_conv_id()
 
     def __getitem__(self, to_role):
         print("In._get_from_conv_table")
@@ -83,27 +64,24 @@ class Server(Actor):
             handler = self.handle_cast
         return handler()
 
-    def start(self, *args, **kw):
-        """Override to be notified when the server starts.
-        """
+    def start(self, *args, **kwargs):
+        """Override to be notified when the server starts."""
         pass
 
-    def stop(self, *args, **kw):
-        """Override to be notified when the server stops.
-        """
+    def stop(self, *args, **kwargs):
+        """Override to be notified when the server stops."""
         pass
 
-    def main(self, *args, **kw):
-        """Implement the actor main loop by waiting forever for messages.
-        """
-        self.start(*args, **kw)
+    def main(self, *args, **kwargs):
+        """Implement the actor main loop by waiting forever for messages."""
+        self.start(*args, **kwargs)
         try:
-            while True:
+            while 1:
                 body, message = yield self.receive()
                 handler = self.get_handler(message)
                 handler(body, message)
         finally:
-            self.stop(*args, **kw)
+            self.stop(*args, **kwargs)
 
 
 class RPCClient(Actor):
