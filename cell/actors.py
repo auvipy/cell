@@ -23,10 +23,11 @@ from .utils import cached_property, shortuuid
 
 __all__ = ['Actor']
 builtin_fields = {'ver': __version__}
- 
+
 
 def enum(**enums):
     return type('Enum', (object,), enums)
+
 
 class ActorType(type):
 
@@ -39,9 +40,12 @@ class ActorType(type):
                 name = self.__class__.__name__
         return '<@actor: %s>' % (name, )
 
-ACT_TYPE = enum(DIRECT = 'direct', 
-                RR = 'round-robin', 
-                SCATTER = 'scatter')
+ACT_TYPE = enum(
+    DIRECT='direct',
+    RR='round-robin',
+    SCATTER='scatter',
+)
+
 
 class Actor(object):
     __metaclass__ = ActorType
@@ -53,7 +57,7 @@ class Actor(object):
     NoReplyError = exceptions.NoReplyError
     NoRouteError = exceptions.NoRouteError
     NotBoundError = exceptions.NotBoundError
-    
+
     #: Actor name.
     #: Defaults to the defined class name.
     name = None
@@ -93,16 +97,16 @@ class Actor(object):
 
     #: Exchange used for replies.
     reply_exchange = Exchange('cl.reply', 'direct')
-    
+
     #: Exchange used for forwarding/binding with other actors.
     output_exchange = None
-    
+
     #: Exchange used for receiving broadcast commands for this actor type.
     _scatter_exchange = None
-    
+
     #: Exchange used for round-robin commands for this actor type.
     _rr_exchange = None
-    
+
     #: Should we retry publishing messages by default?
     #: Default: NO
     retry = None
@@ -128,23 +132,24 @@ class Actor(object):
                     ACT_TYPE.SCATTER: '__scatter__'}
 
     meta = {}
-     
+
     class state:
-        def add_binding(self, source, routing_key = '',
-                        inbox_type = ACT_TYPE.DIRECT):
+
+        def add_binding(self, source, routing_key='',
+                        inbox_type=ACT_TYPE.DIRECT):
             source_exchange = Exchange(**source)
             binder = self.actor.get_binder(inbox_type)
             #@TODO: It is correct to declare the destination?
-            maybe_declare(source_exchange, self.actor.connection.default_channel)
+            maybe_declare(source_exchange,
+                          self.actor.connection.default_channel)
             binder(exchange=source_exchange, routing_key=routing_key)
-                
-        def remove_binding(self, source, routing_key = '',
-                           inbox_type = ACT_TYPE.DIRECT):
+
+        def remove_binding(self, source, routing_key='',
+                           inbox_type=ACT_TYPE.DIRECT):
             source_exchange = Exchange(**source)
             unbinder = self.actor.get_unbinder(inbox_type)
             unbinder(exchange=source_exchange, routing_key=routing_key)
-        
-        
+
     def __init__(self, connection=None, id=None, name=None, exchange=None,
             logger=None, agent=None, **kwargs):
         self.connection = connection
@@ -152,25 +157,26 @@ class Actor(object):
         self.name = name or self.name or self.__class__.__name__
         self.exchange = exchange or self.exchange
         self.agent = agent
-        
+
         if not self.exchange:
             self.exchange = Exchange('cl.%s' % (self.name, ), 'direct')
-     
-        type_map = {ACT_TYPE.DIRECT: 
+
+        type_map = {ACT_TYPE.DIRECT:
                         [self.get_direct_queue, self._inbox_direct],
-                    ACT_TYPE.RR: 
+                    ACT_TYPE.RR:
                         [self.get_rr_queue, self._inbox_rr],
-                    ACT_TYPE.SCATTER: 
-                        [self.get_scatter_queue, self._inbox_scatter]} 
-     
+                    ACT_TYPE.SCATTER:
+                        [self.get_scatter_queue, self._inbox_scatter]}
+
         self.type_to_queue = {k: v[0] for k, v in type_map.iteritems()}
         self.type_to_exchange = {k: v[1] for k, v in type_map.iteritems()}
-         
+
         if self.default_fields is None:
             self.default_fields = {}
-        
+
         if not self.output_exchange:
-            self.output_exchange = Exchange('cl.%s.output' % (self.name), 'topic')
+            self.output_exchange = Exchange('cl.%s.output' % self.name,
+                                            type='topic')
         logger_name = self.name
         if self.agent:
             logger_name = '%s#%s' % (self.name, shortuuid(self.agent.id, ))
@@ -182,43 +188,42 @@ class Actor(object):
         if type == ACT_TYPE.DIRECT:
             entity = self.type_to_queue[type]()
             binder = entity.queue_bind
-        else: 
+        else:
             entity = self.type_to_exchange[type]()
             binder = entity.exchange_bind
         #@TODO: Declare probably should not happened here
         entity.maybe_bind(self.connection.default_channel)
         maybe_declare(entity, entity.channel)
         return binder
-          
+
     def get_unbinder(self, type):
         if type == ACT_TYPE.DIRECT:
             entity = self.type_to_queue[type]()
             unbinder = entity.unbind
-        else: 
+        else:
             entity = self.type_to_exchange[type]()
             unbinder = entity.exchange_unbind
         entity = entity.maybe_bind(self.connection.default_channel)
         #@TODO: Declare probably should not happened here
         return unbinder
-    
-    def add_binding(self, source, routing_key = '',     
-                    inbox_type = ACT_TYPE.DIRECT, send_to = ACT_TYPE.DIRECT):
-              
-        self.call('add_binding', {'source': source.as_dict(), 
-                                  'routing_key': routing_key, 
-                                  'inbox_type':  inbox_type}, 
-                  type = send_to)
-    
-    def remove_binding(self, source, routing_key = '', 
-                       inbox_type = ACT_TYPE.DIRECT, send_to = ACT_TYPE.DIRECT):
-        self.call('remove_binding', {'source': source.as_dict(), 
-                                     'routing_key': routing_key, 
-                                     'inbox_type':  inbox_type}, 
-                  type = send_to)
-    
+
+    def add_binding(self, source, routing_key='',
+                    inbox_type=ACT_TYPE.DIRECT, send_to=ACT_TYPE.DIRECT):
+
+        self.call('add_binding', {'source': source.as_dict(),
+                                  'routing_key': routing_key,
+                                  'inbox_type':  inbox_type},
+                  type=send_to)
+
+    def remove_binding(self, source, routing_key='',
+                       inbox_type=ACT_TYPE.DIRECT, send_to=ACT_TYPE.DIRECT):
+        self.call('remove_binding', {'source': source.as_dict(),
+                                     'routing_key': routing_key,
+                                     'inbox_type':  inbox_type},
+                  type=send_to)
+
     def setup(self):
         pass
-                   
 
     def construct_state(self):
         """Instantiates the state class of this actor."""
@@ -260,7 +265,7 @@ class Actor(object):
         will block and return the reply.
 
         """
-        
+
         if to is None:
             to = self.routing_key
         r = self.call_or_cast(method, args, routing_key=to,
@@ -339,7 +344,7 @@ class Actor(object):
         """Returns a unique exchange that can be used to listen for messages
         to this class."""
         return Exchange('cl.scatter.%s' % (self.name, ), 'fanout')
-    
+
     def get_rr_exchange(self):
         """Returns a unique exchange that can be used to listen for messages
         to this class."""
@@ -349,7 +354,7 @@ class Actor(object):
         """Returns a unique exchange that can be used to listen for messages
         to this class."""
         return self.exchange
-    
+
     def get_queues(self):
         return [self.type_to_queue[type]() for type in self.types]
 
@@ -360,8 +365,8 @@ class Actor(object):
                      auto_delete=True)
 
     def get_scatter_queue(self):
-        return Queue('%s.%s.scatter' % (self.name, self.id), self.inbox_scatter,
-                     auto_delete=True)
+        return Queue('%s.%s.scatter' % (self.name, self.id),
+                     self.inbox_scatter, auto_delete=True)
 
     def get_rr_queue(self):
         return Queue(self.inbox_rr.name + '.rr', self.inbox_rr,
@@ -385,7 +390,7 @@ class Actor(object):
         return producer.publish(body, **props)
 
     def emit(self, method, args={}, before=None, retry=None,
-            retry_policy=None, type=None, exchange = None, **props):
+            retry_policy=None, type=None, exchange=None, **props):
         """Send message to actor's outbox."""
         retry = self.retry if retry is None else retry
         body = {'class': self.name, 'method': method, 'args': args}
@@ -393,23 +398,23 @@ class Actor(object):
         _retry_policy = self.retry_policy
         if retry_policy:  # merge default and custom policies.
             _retry_policy = dict(_retry_policy, **retry_policy)
-        
-        props.setdefault('routing_key', self.routing_key)    
+
+        props.setdefault('routing_key', self.routing_key)
         props.setdefault('serializer', self.serializer)
-        
+
         props = dict(props, exchange=exchange, before=before)
         con = producers[self._connection]
         print'connection is:', con
         ipublish(con, self._publish,
                  (body, ), dict(props, exchange=exchange, before=before),
                  **(retry_policy or {}))
-        
+
     def cast(self, method, args={}, before=None, retry=None,
             retry_policy=None, type=None, **props):
         """Send message to actor.  Discarding replies."""
         retry = self.retry if retry is None else retry
         body = {'class': self.name, 'method': method, 'args': args}
-        
+
         _retry_policy = self.retry_policy
         if retry_policy:  # merge default and custom policies.
             _retry_policy = dict(_retry_policy, **retry_policy)
@@ -420,7 +425,7 @@ class Actor(object):
             raise Exception('the type:%s is not supported', type)
         elif not type:
             type = ACT_TYPE.DIRECT
-            
+
         props.setdefault('routing_key', self.routing_key)
         props.setdefault('serializer', self.serializer)
         exchange = self.type_to_exchange[type]()
@@ -454,7 +459,7 @@ class Actor(object):
         except self.Next:
             # don't reply, delegate to other agent.
             pass
-        else:           
+        else:
             self.reply(message, r)
 
     def reply(self, req, body, **props):
@@ -483,7 +488,7 @@ class Actor(object):
             # is raised, as this is probably intended.
             try:
                 handler(body, message)
-            except Exception:               
+            except Exception:
                 raise
             except BaseException:
                 message.ack()
@@ -492,7 +497,7 @@ class Actor(object):
                 message.ack()
 
         handle()
-        
+
     def _collect_replies(self, conn, channel, ticket, *args, **kwargs):
         kwargs.setdefault('timeout', self.default_timeout)
         if 'limit' not in kwargs:
@@ -503,8 +508,9 @@ class Actor(object):
     def lookup_action(self, name):
         try:
             if not name:
-                method =  self.default_receive
-            else: method = getattr(self.state, name)
+                method = self.default_receive
+            else:
+                method = getattr(self.state, name)
         except AttributeError:
             raise KeyError(name)
         if not callable(method) or name.startswith('_'):
@@ -514,7 +520,7 @@ class Actor(object):
     def default_receive(self, msg_body):
         """Override in the derived classes."""
         pass
-    
+
     def _DISPATCH(self, body, ticket=None):
         """Dispatch message to the appropriate method
         in :attr:`state`, handle possible exceptions,
@@ -562,7 +568,7 @@ class Actor(object):
             r = {'nok': [safe_repr(exc), self._get_traceback(einfo)]}
             self.log.error('#%s <-- nok=%r', sticket, exc)
         return dict(self._default_fields, **r)
-        
+
     def _get_traceback(self, exc_info):
         return ''.join(traceback.format_exception(*exc_info))
 
@@ -582,42 +588,39 @@ class Actor(object):
 
     def __reduce__(self):
         return (self.__class__, (self.connection, self.id,
-                                 self.name, self.exchange))    
+                                 self.name, self.exchange))
+
     @property
     def outbox(self):
         return self.output_exchange
-        #return self.output_exchange.maybe_bind(self.connection.default_channel)
 
     def _inbox_rr(self):
         if not self._rr_exchange:
-            self._rr_exchange  = self.get_rr_exchange() 
-            #self._rr_exchange.maybe_bind(self._connection.default_channel)
+            self._rr_exchange = self.get_rr_exchange()
         return self._rr_exchange
-    
+
     @property
     def inbox_rr(self):
         return self._inbox_rr()
-    
+
     def _inbox_direct(self):
         if not self.exchange:
-            self.exchange  = self.get_direct_exchange() 
-            #self.exchange.maybe_bind(self._connection.default_channel)
+            self.exchange = self.get_direct_exchange()
         return self.exchange
-    
+
     @property
     def inbox_direct(self):
         return self._inbox_direct()
-    
+
     def _inbox_scatter(self):
         if not self._scatter_exchange:
-            self._scatter_exchange  = self.get_scatter_exchange() 
-            #self._scatter_exchange.maybe_bind(self._connection.default_channel)
+            self._scatter_exchange = self.get_scatter_exchange()
         return self._scatter_exchange
-    
+
     @property
     def inbox_scatter(self):
         return self._inbox_scatter()
-    
+
     @property
     def _connection(self):
         if not self.is_bound():
@@ -635,8 +638,4 @@ class Actor(object):
         elif self.agent:
             return self.agent.id
         else:
-            return self.id   
-
-
-
-        
+            return self.id

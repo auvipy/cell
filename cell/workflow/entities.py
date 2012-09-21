@@ -2,38 +2,20 @@
 
 from __future__ import absolute_import, with_statement
 
-import sys
-import traceback
+from kombu.common import uuid
 
-from itertools import count
-from operator import itemgetter
+from cell.results import AsyncResult
 
-#from .monads import callcc, done, ContinuationMonad, do, mreturn, MonadReturn
+from cell.actors import Actor
 
-from kombu import Consumer, Exchange, Queue
-from kombu.common import (collect_replies, ipublish, isend_reply,
-                          maybe_declare, uuid)
-from kombu.log import Log
-from kombu.pools import producers
-from kombu.utils import kwdict, reprcall, reprkwargs
-from kombu.utils.encoding import safe_repr
-
-from .. import __version__
-from ..results import AsyncResult
-from ..utils import cached_property, shortuuid
-
-from ..utils.custom_operators import Infix
-from ..actors import Actor
+from .mondas import mreturn, MonadReturn
 
 __all__ = ['Workflow']
-builtin_fields = {'ver': __version__}
-
-#from gevent import queue as gqueue
 
 
 class Workflow(object):
 
-    def __init__(self, protocol, wf_id = None):
+    def __init__(self, protocol, wf_id=None):
         self._wf_table = {}
         self._protocol = protocol
         self._id = wf_id if wf_id else self._build_conv_id()
@@ -42,7 +24,7 @@ class Workflow(object):
     def protocol(self):
         return self._protocol
 
-    @protocol.setter
+    @protocol.setter  # noqa
     def protocol(self, value):
         self._protocol = value
 
@@ -50,37 +32,42 @@ class Workflow(object):
     def id(self):
         return self._id
 
-    @id.setter
+    @id.setter  # noqa
     def id(self, value):
         self._id = value
 
     def __getitem__(self, to_role):
-        print "In._get_from_conv_table"
+        print("In._get_from_conv_table")
         self._wf_table.setdefault(to_role, AsyncResult())
         if isinstance(self._wf_table[to_role], AsyncResult):
             # @TODO. Need timeout for the AsyncResult
-            print "Wait on the Async Result"
+            print("Wait on the Async Result")
             to_role_addr = self._wf_table[to_role].get()
-            print "get the Async Result, value is:%s" %to_role_addr
+            print("get the Async Result, value is:%s" % to_role_addr)
             self._wf_table[to_role] = to_role_addr
         return self._wf_table[to_role]
 
     def __setitem__(self, to_role, to_role_addr):
-        print "Conversation._add_to_conv_table: to_role:%s, to_role_addr:%s" %(to_role, to_role_addr)
-        if to_role in self._conv_table and isinstance(self._conv_table[to_role], AsyncResult):
+        print("Conv._add_to_conv_table: to_role:%s, to_role_addr:%s" % (
+                to_role, to_role_addr))
+        if to_role in self._conv_table and \
+                isinstance(self._conv_table[to_role], AsyncResult):
             self._wf_table[to_role].set(to_role_addr)
-        else: self._wf_table[to_role] = to_role_addr
+        else:
+            self._wf_table[to_role] = to_role_addr
 
     def has_role(self, role):
         return role in self._conv_table
 
-    # TODO: Why we need the counter here?. This is a copy from endpoint.py, it should be changed
+    # TODO: Why we need the counter here?.
+    # This is a copy from endpoint.py, it should be changed
     def _build_workflow_id(self):
         """
         Builds a unique conversation id.
         """
         return uuid()
-    
+
+
 class Server(Actor):
     """An actor which responds to the call protocol by looking for the
     specified method and calling it.
@@ -88,14 +75,14 @@ class Server(Actor):
     Also, Server provides start and stop methods which can be overridden
     to customize setup.
     """
-    
+
     def get_handler(self, message):
         if message.properties.get('reply_to'):
             handler = self.handle_call
         else:
             handler = self.handle_cast
         return handler()
-    
+
     def start(self, *args, **kw):
         """Override to be notified when the server starts.
         """
@@ -118,19 +105,19 @@ class Server(Actor):
         finally:
             self.stop(*args, **kw)
 
+
 class RPCClient(Actor):
-      
+
     def __init__(self, server):
         self.server = server
-    
+
     def request_internal(self, method, args):
-        self.server.send({'method':method, 'args':args}, nowait = True)
+        self.server.send({'method': method, 'args': args}, nowait=True)
         result = (yield self.server.receive())
         mreturn(result)
-    
+
     def request(self, method, args):
         try:
             self.request_internal(method, args)
         except MonadReturn, val:
-            return val   
-       
+            return val
