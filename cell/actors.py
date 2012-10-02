@@ -133,22 +133,8 @@ class Actor(object):
 
     meta = {}
 
-    class state:
-
-        def add_binding(self, source, routing_key='',
-                        inbox_type=ACTOR_TYPE.DIRECT):
-            source_exchange = Exchange(**source)
-            binder = self.actor.get_binder(inbox_type)
-            #@TODO: It is correct to declare the destination?
-            maybe_declare(source_exchange,
-                          self.actor.connection.default_channel)
-            binder(exchange=source_exchange, routing_key=routing_key)
-
-        def remove_binding(self, source, routing_key='',
-                           inbox_type=ACTOR_TYPE.DIRECT):
-            source_exchange = Exchange(**source)
-            unbinder = self.actor.get_unbinder(inbox_type)
-            unbinder(exchange=source_exchange, routing_key=routing_key)
+    class state(object):
+        pass
 
     def __init__(self, connection=None, id=None, name=None, exchange=None,
             logger=None, agent=None, outbox_exchange=None, **kwargs):
@@ -191,6 +177,19 @@ class Actor(object):
 
         # actor specific initialization.
         self.construct()
+
+    def _add_binding(self, source, routing_key='',
+            inbox_type=ACTOR_TYPE.DIRECT):
+        source_exchange = Exchange(**source)
+        binder = self.get_binder(inbox_type)
+        maybe_declare(source_exchange, self.connection.default_channel)
+        binder(exchange=source_exchange, routing_key=routing_key)
+
+    def _remove_binding(self, source, routing_key='',
+            inbox_type=ACTOR_TYPE.DIRECT):
+        source_exchange = Exchange(**source)
+        unbinder = self.get_unbinder(inbox_type)
+        unbinder(exchange=source_exchange, routing_key=routing_key)
 
     def get_binder(self, type):
         if type == ACTOR_TYPE.DIRECT:
@@ -255,13 +254,16 @@ class Actor(object):
         except AttributeError:
             # set default state attributes.
             return self.contribute_to_object(state, {
-                    'actor': self,
-                    'agent': self.agent,
-                    'connection': self.connection,
-                    'log': self.log,
-                    'Next': self.Next,
-                    'NoRouteError': self.NoRouteError,
-                    'NoReplyError': self.NoReplyError})
+                'actor': self,
+                'agent': self.agent,
+                'connection': self.connection,
+                'log': self.log,
+                'Next': self.Next,
+                'NoRouteError': self.NoRouteError,
+                'NoReplyError': self.NoReplyError,
+                'add_binding': self._add_binding,
+                'remove_binding': self._remove_binding,
+            })
         else:
             return contribute(self)
 

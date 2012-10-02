@@ -27,7 +27,7 @@ import mock
 from nose import SkipTest
 from kombu.utils import nested
 
-from cell.utils.compat import WhateverIO
+from kombu.utils.compat import WhateverIO
 
 
 class Mock(mock.Mock):
