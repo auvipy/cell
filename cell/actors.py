@@ -257,6 +257,7 @@ class Actor(object):
             return self.contribute_to_object(state, {
                     'actor': self,
                     'agent': self.agent,
+                    'connection': self.connection,
                     'log': self.log,
                     'Next': self.Next,
                     'NoRouteError': self.NoRouteError,
