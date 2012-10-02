@@ -27,6 +27,7 @@ class dAgent(Actor):
             actor.consumer = actor.Consumer(self.connection.channel())
             actor.consumer.consume()
             self.agent.actors[actor.id] = actor
+            actor.on_agent_ready()
 
         def add_actor(self, name, id=None):
             """Add actor to the registry and start the actor's main method."""
