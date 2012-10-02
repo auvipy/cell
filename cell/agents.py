@@ -4,11 +4,111 @@ from __future__ import absolute_import
 
 from inspect import isclass
 
-from kombu.common import uuid
-from kombu.log import setup_logging
+from kombu.common import uuid, ignore_errors
+from kombu.log import get_logger, setup_logging
 from kombu.mixins import ConsumerMixin
+from kombu.utils import symbol_by_name
 
-__all__ = ['Agent']
+from .actors import Actor, ActorProxy, ACTOR_TYPE
+from .utils import qualname
+
+__all__ = ['Agent', 'dAgent']
+
+logger = get_logger(__name__)
+debug, warn, error = logger.debug, logger.warn, logger.error
+
+
+class dAgent(Actor):
+    types = (ACTOR_TYPE.RR, ACTOR_TYPE.SCATTER)
+
+    class state(object):
+
+        def _start_actor_consumer(self, actor):
+            actor.consumer = actor.Consumer(self.connection.channel())
+            actor.consumer.consume()
+            self.actor.registry[actor.id] = actor
+
+        def add_actor(self, name, id=None):
+            """Add actor to the registry and start the actor's main method."""
+            try:
+                actor = symbol_by_name(name)(
+                    connection=self.connection, id=id, agent=self,
+                )
+                if actor.id in self.actor.registry:
+                    warn('Actor id %r already exists', actor.id)
+                self._start_actor_consumer(actor)
+                debug('Actor registered: %s', name)
+                return actor.id
+            except Exception as exc:
+                error('Cannot start actor: %r', exc, exc_info=True)
+
+        def stop_all(self):
+            self.actor.shutdown()
+
+        def reset(self):
+            debug('Resetting active actors')
+            for actor in self.actor.registry.itervalues():
+                if actor.consumer:
+                    ignore_errors(self.connection, actor.consumer.cancel)
+                actor.connection = self.connection
+                self._start_actor_consumer(actor)
+
+        def stop_actor(self, id):
+            try:
+                actor = self.actor.registry.pop(id)
+            except KeyError:
+                pass
+            else:
+                if actor.consumer and actor.consumer.channel:
+                    ignore_errors(self.connection, actor.consumer.cancel)
+
+    def __init__(self, connection, app=None, *args, **kwargs):
+        self.connection = connection
+        self.app = app
+        self.registry = {}
+        super(Agent, self).__init__(*args, **kwargs)
+
+    def contribute_to_state(self, state):
+        state.connection = self.connection
+        conninfo = self.app.connection()
+        state.connection_errors = conninfo.connection_errors
+        state.channel_errors = conninfo.channel_errors
+        state.reset()
+        return super(Agent, self).contribute_to_state(state)
+
+    def add_actor(self, actor, nowait=False):
+        name = qualname(actor)
+        actor_id = uuid()
+        res = self.call('add_actor', {'name': name, 'id': actor_id},
+                        type='round-robin', nowait=True)
+        actor_proxy = ActorProxy(actor, actor_id, res)
+        return actor_proxy
+
+    def stop_actor_by_id(self, actor_id, nowait=False):
+        return self.scatter('stop_actor', {'actor_id': actor_id},
+                            nowait=nowait)
+
+    def start(self):
+        debug('Starting Agent')
+
+    def _shutdown(self, cancel=True, close=True, clear=True):
+        try:
+            for actor in self.registry.itervalues():
+                if actor and actor.consumer:
+                    if cancel:
+                        ignore_errors(self.connection, actor.consumer.cancel)
+                    if close and actor.consumer.channel:
+                        ignore_errors(self.connection,
+                                      actor.consumer.channel.close)
+        finally:
+            if clear:
+                self.registry.clear()
+
+    def stop(self):
+        self._shutdown(clear=False)
+
+    def shutdown(self):
+        self._shutdown(cancel=False)
 
 
 class Agent(ConsumerMixin):

@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from kombu.syn import detect_environment
 
-from cyme.utils import cached_property
+from cell.utils import cached_property
 
 G_NOT_FOUND = """\
 cell does not currently support %r, please use one of %s\

@@ -6,7 +6,7 @@ import optparse
 import os
 import sys
 
-from cyme import __version__
+from cell import __version__
 
 __all__ = ['Option', 'Command']
 Option = optparse.make_option

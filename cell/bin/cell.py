@@ -5,8 +5,8 @@ from __future__ import absolute_import
 from kombu import Connection
 
 from .base import Command, Option
-from cyme import Agent
-from cyme.utils import instantiate
+from cell import Agent
+from cell.utils import instantiate
 
 __all__ = ['cell', 'main']
 

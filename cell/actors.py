@@ -19,18 +19,24 @@ from kombu.utils.encoding import safe_repr
 from . import __version__
 from . import exceptions
 from .results import AsyncResult
-from .utils import cached_property, shortuuid
+from .utils import cached_property, enum, shortuuid, setattr_default
 
 __all__ = ['Actor']
-builtin_fields = {'ver': __version__}
+BUILTIN_FIELDS = {'ver': __version__}
 
-
-def enum(**enums):
-    return type('Enum', (object,), enums)
+ACTOR_TYPE = enum(
+    DIRECT='direct',
+    RR='round-robin',
+    SCATTER='scatter',
+)
 
 
 class ActorType(type):
+    """Metaclass for actors.
 
+    Only modifies the textual representation of actor classes.
+
+    """
     def __repr__(self):
         name = self.name
         if not name:
@@ -38,13 +44,7 @@ class ActorType(type):
                 name = self.__name__
             except AttributeError:
                 name = self.__class__.__name__
-        return '<@actor: %s>' % (name, )
-
-ACT_TYPE = enum(
-    DIRECT='direct',
-    RR='round-robin',
-    SCATTER='scatter',
-)
+        return '<@actor: %s>' % name
 
 
 class Actor(object):
@@ -83,7 +83,7 @@ class Actor(object):
     #:         Send the message to an agent by round-robin.
     #:     * scatter
     #:         Send the message to all of the agents (broadcast).
-    types = (ACT_TYPE.DIRECT,)
+    types = (ACTOR_TYPE.DIRECT, )
 
     #: Default serializer used to send messages and reply messages.
     serializer = 'json'
@@ -99,7 +99,7 @@ class Actor(object):
     reply_exchange = Exchange('cl.reply', 'direct')
 
     #: Exchange used for forwarding/binding with other actors.
-    output_exchange = None
+    outbox_exchange = None
 
     #: Exchange used for receiving broadcast commands for this actor type.
     _scatter_exchange = None
@@ -128,15 +128,15 @@ class Actor(object):
 
     #: Map of calling types and their special routing keys.
     type_to_rkey = {'rr': '__rr__',
-                    ACT_TYPE.RR: '__rr__',
-                    ACT_TYPE.SCATTER: '__scatter__'}
+                    ACTOR_TYPE.RR: '__rr__',
+                    ACTOR_TYPE.SCATTER: '__scatter__'}
 
     meta = {}
 
     class state:
 
         def add_binding(self, source, routing_key='',
-                        inbox_type=ACT_TYPE.DIRECT):
+                        inbox_type=ACTOR_TYPE.DIRECT):
             source_exchange = Exchange(**source)
             binder = self.actor.get_binder(inbox_type)
             #@TODO: It is correct to declare the destination?
@@ -145,47 +145,55 @@ class Actor(object):
             binder(exchange=source_exchange, routing_key=routing_key)
 
         def remove_binding(self, source, routing_key='',
-                           inbox_type=ACT_TYPE.DIRECT):
+                           inbox_type=ACTOR_TYPE.DIRECT):
             source_exchange = Exchange(**source)
             unbinder = self.actor.get_unbinder(inbox_type)
             unbinder(exchange=source_exchange, routing_key=routing_key)
 
     def __init__(self, connection=None, id=None, name=None, exchange=None,
-            logger=None, agent=None, **kwargs):
+            logger=None, agent=None, outbox_exchange=None, **kwargs):
         self.connection = connection
         self.id = id or uuid()
         self.name = name or self.name or self.__class__.__name__
         self.exchange = exchange or self.exchange
+        self.outbox_exchange = outbox_exchange or self.outbox_exchange
         self.agent = agent
-
-        if not self.exchange:
-            self.exchange = Exchange('cl.%s' % (self.name, ), 'direct')
-
-        type_map = {ACT_TYPE.DIRECT:
-                        [self.get_direct_queue, self._inbox_direct],
-                    ACT_TYPE.RR:
-                        [self.get_rr_queue, self._inbox_rr],
-                    ACT_TYPE.SCATTER:
-                        [self.get_scatter_queue, self._inbox_scatter]}
-
-        self.type_to_queue = {k: v[0] for k, v in type_map.iteritems()}
-        self.type_to_exchange = {k: v[1] for k, v in type_map.iteritems()}
 
         if self.default_fields is None:
             self.default_fields = {}
 
-        if not self.output_exchange:
-            self.output_exchange = Exchange('cl.%s.output' % self.name,
-                                            type='topic')
+        # - setup exchanges and queues
+        if not self.exchange:
+            self.exchange = Exchange('cl.%s' % self.name, 'direct')
+
+        typemap = {
+            ACTOR_TYPE.DIRECT:
+                [self.get_direct_queue, self._inbox_direct],
+            ACTOR_TYPE.RR:
+                [self.get_rr_queue, self._inbox_rr],
+            ACTOR_TYPE.SCATTER:
+                [self.get_scatter_queue, self._inbox_scatter]
+        }
+
+        self.type_to_queue = dict((k, v[0]) for k, v in typemap.iteritems())
+        self.type_to_exchange = dict((k, v[1]) for k, v in typemap.iteritems())
+
+        if not self.outbox_exchange:
+            self.outbox_exchange = Exchange(
+                'cl.%s.output' % self.name, type='topic',
+            )
+        # - setup logging
         logger_name = self.name
         if self.agent:
-            logger_name = '%s#%s' % (self.name, shortuuid(self.agent.id, ))
-        self.log = Log('!<%s>' % (logger_name, ), logger=logger)
+            logger_name = '%s#%s' % (self.name, shortuuid(self.agent.id))
+        self.log = Log('!<%s>' % logger_name, logger=logger)
         self.state = self.contribute_to_state(self.construct_state())
-        self.setup()
+
+        # actor specific initialization.
+        self.construct()
 
     def get_binder(self, type):
-        if type == ACT_TYPE.DIRECT:
+        if type == ACTOR_TYPE.DIRECT:
             entity = self.type_to_queue[type]()
             binder = entity.queue_bind
         else:
@@ -197,7 +205,7 @@ class Actor(object):
         return binder
 
     def get_unbinder(self, type):
-        if type == ACT_TYPE.DIRECT:
+        if type == ACTOR_TYPE.DIRECT:
             entity = self.type_to_queue[type]()
             unbinder = entity.unbind
         else:
@@ -208,43 +216,44 @@ class Actor(object):
         return unbinder
 
     def add_binding(self, source, routing_key='',
-                    inbox_type=ACT_TYPE.DIRECT, send_to=ACT_TYPE.DIRECT):
+            inbox_type=ACTOR_TYPE.DIRECT, send_to=ACTOR_TYPE.DIRECT):
 
-        self.call('add_binding', {'source': source.as_dict(),
-                                  'routing_key': routing_key,
-                                  'inbox_type':  inbox_type},
-                  type=send_to)
+        self.call('add_binding', {
+            'source': source.as_dict(),
+            'routing_key': routing_key,
+            'inbox_type': inbox_type,
+        }, type=send_to)
 
     def remove_binding(self, source, routing_key='',
-                       inbox_type=ACT_TYPE.DIRECT, send_to=ACT_TYPE.DIRECT):
-        self.call('remove_binding', {'source': source.as_dict(),
-                                     'routing_key': routing_key,
-                                     'inbox_type':  inbox_type},
-                  type=send_to)
+            inbox_type=ACTOR_TYPE.DIRECT, send_to=ACTOR_TYPE.DIRECT):
 
-    def setup(self):
+        self.call('remove_binding', {
+            'source': source.as_dict(),
+            'routing_key': routing_key,
+            'inbox_type':  inbox_type,
+        }, type=send_to)
+
+    def construct(self):
+        """Actor specific initialization."""
         pass
 
     def construct_state(self):
         """Instantiates the state class of this actor."""
         return self.state()
 
-    def maybe_setattr(self, obj, attr, value):
-        if not hasattr(obj, attr):
-            setattr(obj, attr, value)
-
     def on_agent_ready(self):
         pass
 
     def contribute_to_object(self, obj, map):
         for attr, value in map.iteritems():
-            self.maybe_setattr(obj, attr, value)
+            setattr_default(obj, attr, value)
         return obj
 
     def contribute_to_state(self, state):
         try:
             contribute = state.contribute_to_state
         except AttributeError:
+            # set default state attributes.
             return self.contribute_to_object(state, {
                     'actor': self,
                     'agent': self.agent,
@@ -283,7 +292,7 @@ class Actor(object):
         will block and return the reply.
 
         """
-        r = self.call_or_cast(method, args, type=ACT_TYPE.RR,
+        r = self.call_or_cast(method, args, type=ACTOR_TYPE.RR,
                               nowait=nowait, **kwargs)
         if not nowait:
             return r.get()
@@ -303,7 +312,7 @@ class Actor(object):
 
         """
         kwargs.setdefault('timeout', 2)
-        r = self.call_or_cast(method, args, type=ACT_TYPE.SCATTER,
+        r = self.call_or_cast(method, args, type=ACTOR_TYPE.SCATTER,
                               nowait=nowait, **kwargs)
         if not nowait:
             return r.gather(**kwargs)
@@ -343,12 +352,12 @@ class Actor(object):
     def get_scatter_exchange(self):
         """Returns a unique exchange that can be used to listen for messages
         to this class."""
-        return Exchange('cl.scatter.%s' % (self.name, ), 'fanout')
+        return Exchange('cl.scatter.%s' % self.name, 'fanout')
 
     def get_rr_exchange(self):
         """Returns a unique exchange that can be used to listen for messages
         to this class."""
-        return Exchange('cl.rr.%s' % (self.name, ), 'fanout')
+        return Exchange('cl.rr.%s' % self.name, 'fanout')
 
     def get_direct_exchange(self):
         """Returns a unique exchange that can be used to listen for messages
@@ -424,7 +433,7 @@ class Actor(object):
         if type and type not in self.types:
             raise Exception('the type:%s is not supported', type)
         elif not type:
-            type = ACT_TYPE.DIRECT
+            type = ACTOR_TYPE.DIRECT
 
         props.setdefault('routing_key', self.routing_key)
         props.setdefault('serializer', self.serializer)
@@ -592,7 +601,7 @@ class Actor(object):
 
     @property
     def outbox(self):
-        return self.output_exchange
+        return self.outbox_exchange
 
     def _inbox_rr(self):
         if not self._rr_exchange:
@@ -629,7 +638,7 @@ class Actor(object):
 
     @cached_property
     def _default_fields(self):
-        return dict(builtin_fields, **self.default_fields)
+        return dict(BUILTIN_FIELDS, **self.default_fields)
 
     @property
     def routing_key(self):
@@ -639,3 +648,18 @@ class Actor(object):
             return self.agent.id
         else:
             return self.id
+
+
+class ActorProxy(object):
+    """A class that represents an actor started remotely."""
+
+    def __init__(self, local_actor, actor_id, async_start_result):
+        self.__subject = local_actor.__copy__()
+        self.__subject.id = actor_id
+        self.async_start_result = async_start_result
+
+    def __getattr__(self, name):
+            return getattr(self.__subject, name)
+
+    def wait_to_start(self):
+        self.async_start_result._result
