@@ -26,7 +26,7 @@ class dAgent(Actor):
         def _start_actor_consumer(self, actor):
             actor.consumer = actor.Consumer(self.connection.channel())
             actor.consumer.consume()
-            self.actor.registry[actor.id] = actor
+            self.agent.actors[actor.id] = actor
 
         def add_actor(self, name, id=None):
             """Add actor to the registry and start the actor's main method."""
@@ -34,7 +34,7 @@ class dAgent(Actor):
                 actor = symbol_by_name(name)(
                     connection=self.connection, id=id, agent=self,
                 )
-                if actor.id in self.actor.registry:
+                if actor.id in self.agent.actors:
                     warn('Actor id %r already exists', actor.id)
                 self._start_actor_consumer(actor)
                 debug('Actor registered: %s', name)
@@ -43,11 +43,11 @@ class dAgent(Actor):
                 error('Cannot start actor: %r', exc, exc_info=True)
 
         def stop_all(self):
-            self.actor.shutdown()
+            self.agent.shutdown()
 
         def reset(self):
             debug('Resetting active actors')
-            for actor in self.actor.registry.itervalues():
+            for actor in self.agent.actors.itervalues():
                 if actor.consumer:
                     ignore_errors(self.connection, actor.consumer.cancel)
                 actor.connection = self.connection
@@ -55,7 +55,7 @@ class dAgent(Actor):
 
         def stop_actor(self, id):
             try:
-                actor = self.actor.registry.pop(id)
+                actor = self.agent.actors.pop(id)
             except KeyError:
                 pass
             else:
@@ -63,30 +63,31 @@ class dAgent(Actor):
                     ignore_errors(self.connection, actor.consumer.cancel)
 
     def __init__(self, connection, id=None):
-        self.registry = {}
+        self.actors = {}
         Actor.__init__(self, connection=connection, id=id, agent=self)
-
-    def contribute_to_state(self, state):
-        state = super(dAgent, self).contribute_to_state(state)
-        state.connection = self.connection
-        state.connection_errors = self.connection.connection_errors
-        state.channel_errors = self.connection.channel_errors
-        state.reset()
 
     def add_actor(self, actor, nowait=False):
         name = qualname(actor)
         actor_id = uuid()
         res = self.call('add_actor', {'name': name, 'id': actor_id},
                         type='round-robin', nowait=True)
-        actor_proxy = ActorProxy(actor, actor_id, res)
-        return actor_proxy
+        return ActorProxy(actor, actor_id, res)
 
     def stop_actor_by_id(self, actor_id, nowait=False):
         return self.scatter('stop_actor', {'actor_id': actor_id},
                             nowait=nowait)
 
     def start(self):
-        debug('Starting Agent')
+        debug('Starting agent %s', self.id)
+        self.state.reset()
+
+    def stop(self):
+        debug('Stopping agent %s', self.id)
+        self._shutdown(clear=False)
+
+    def shutdown(self):
+        debug('Shutdown agent %s', self.id)
+        self._shutdown(cancel=False)
 
     def _shutdown(self, cancel=True, close=True, clear=True):
         try:
@@ -100,12 +101,6 @@ class dAgent(Actor):
         finally:
             if clear:
                 self.registry.clear()
-
-    def stop(self):
-        self._shutdown(clear=False)
-
-    def shutdown(self):
-        self._shutdown(cancel=False)
 
     def get_default_scatter_limit(self, actor):
         return None
