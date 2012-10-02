@@ -62,19 +62,16 @@ class dAgent(Actor):
                 if actor.consumer and actor.consumer.channel:
                     ignore_errors(self.connection, actor.consumer.cancel)
 
-    def __init__(self, connection, app=None, *args, **kwargs):
-        self.connection = connection
-        self.app = app
+    def __init__(self, connection, id=None):
         self.registry = {}
-        super(Agent, self).__init__(*args, **kwargs)
+        Actor.__init__(self, connection=connection, id=id, agent=self)
 
     def contribute_to_state(self, state):
+        state = super(dAgent, self).contribute_to_state(state)
         state.connection = self.connection
-        conninfo = self.app.connection()
-        state.connection_errors = conninfo.connection_errors
-        state.channel_errors = conninfo.channel_errors
+        state.connection_errors = self.connection.connection_errors
+        state.channel_errors = self.connection.channel_errors
         state.reset()
-        return super(Agent, self).contribute_to_state(state)
 
     def add_actor(self, actor, nowait=False):
         name = qualname(actor)
@@ -109,6 +106,9 @@ class dAgent(Actor):
 
     def shutdown(self):
         self._shutdown(cancel=False)
+
+    def get_default_scatter_limit(self, actor):
+        return None
 
 
 class Agent(ConsumerMixin):
