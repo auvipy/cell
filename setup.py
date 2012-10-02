@@ -98,12 +98,7 @@ if os.path.exists('README.rst'):
 else:
     long_description = 'See http://pypi.python.org/pypi/cell'
 
-install_requires = ['kombu>=1.5.0']
-try:
-    import importlib  # noqa
-except ImportError:
-    install_requires.append('importlib')
-
+install_requires = ['kombu>=2.4.7']
 setup(
     name='cell',
     version=meta['VERSION'],
