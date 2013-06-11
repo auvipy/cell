@@ -66,4 +66,4 @@ file in the top distribution directory for the full license text.
 Copyright
 =========
 
-Copyright (C) 2011 VMware, Inc.
+Copyright (C) 2011-2013 GoPivotal, Inc.
