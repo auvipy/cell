@@ -1,12 +1,11 @@
 import celery
 from cell import Actor
+from cell.agents import dAgent
 from kombu import Connection, Producer
 from cell.utils.custom_operators import Infix 
 from kombu.common import maybe_declare
-from celery.worker.actorsbootstrap import ActorsManager
 from kombu.utils import uuid
 import time
-from cell.workflow.entities import Workflow
 from celery.utils.imports import instantiate
 
 my_app = celery.Celery(broker='pyamqp://guest@localhost//')
@@ -184,8 +183,11 @@ class FilterExample:
         filter2.call('filter', {'msg' :'Ahu'})
 
 printer_name = 'examples.workflow.Printer' 
-actors_mng = ActorsManager(connection = my_app.broker_connection(), 
+"""actors_mng = ActorsManager(connection = my_app.broker_connection(),
                               app = my_app)
+"""
+
+actors_mng = dAgent(connection=my_app.broker_connection())
 
 if __name__ == '__main__':        
         #FilterExample().start()
