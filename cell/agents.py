@@ -24,6 +24,7 @@ class dAgent(Actor):
     class state(object):
 
         def _start_actor_consumer(self, actor):
+            print 'Starting a dAgent !!!'
             actor.consumer = actor.Consumer(self.connection.channel())
             actor.consumer.consume()
             self.agent.actors[actor.id] = actor
@@ -33,8 +34,8 @@ class dAgent(Actor):
             """Add actor to the registry and start the actor's main method."""
             try:
                 actor = symbol_by_name(name)(
-                    connection=self.connection, id=id, agent=self,
-                )
+                    connection=self.connection, id=id)
+
                 if actor.id in self.agent.actors:
                     warn('Actor id %r already exists', actor.id)
                 self._start_actor_consumer(actor)
@@ -80,6 +81,8 @@ class dAgent(Actor):
 
     def start(self):
         debug('Starting agent %s', self.id)
+        consumer = self.Consumer(self.connection.channel())
+        consumer.consume()
         self.state.reset()
 
     def stop(self):
@@ -147,7 +150,7 @@ class Agent(ConsumerMixin):
 
     def prepare_actors(self):
         return [self._maybe_actor(actor).bind(self.connection, self)
-                    for actor in self.actors]
+                for actor in self.actors]
 
     def get_consumers(self, Consumer, channel):
         return [actor.Consumer(channel) for actor in self.actors]
