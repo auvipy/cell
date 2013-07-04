@@ -102,7 +102,7 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
             if first_matching is None:
                 first_matching = w
             if (self.expected_regex is not None and
-                not self.expected_regex.search(str(w))):
+                    not self.expected_regex.search(str(w))):
                 continue
             # store warning for later retrieval
             self.warning = w
@@ -111,14 +111,15 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
             return
         # Now we simply try to choose a helpful failure message
         if first_matching is not None:
-            raise self.failureException('%r does not match %r' %
-                     (self.expected_regex.pattern, str(first_matching)))
+            raise self.failureException(
+                '%r does not match %r'
+                % (self.expected_regex.pattern, str(first_matching)))
         if self.obj_name:
             raise self.failureException('%s not triggered by %s'
-                % (exc_name, self.obj_name))
+                                        % (exc_name, self.obj_name))
         else:
             raise self.failureException('%s not triggered'
-                % exc_name)
+                                        % exc_name)
 
 
 class Case(unittest.TestCase):
@@ -172,10 +173,10 @@ class Case(unittest.TestCase):
         errors = []
         if missing:
             errors.append('Expected, but missing:\n    %s' % (
-                           safe_repr(missing)))
+                          safe_repr(missing)))
         if unexpected:
             errors.append('Unexpected, but present:\n    %s' % (
-                           safe_repr(unexpected)))
+                          safe_repr(unexpected)))
         if errors:
             standardMsg = '\n'.join(errors)
             self.fail(self._formatMessage(msg, standardMsg))

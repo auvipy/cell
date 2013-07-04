@@ -64,7 +64,7 @@ class Command(object):
     def exit_usage(self, msg):
         sys.stderr.write('ERROR: %s\n\n' % (msg, ))
         self.exit_status('Usage: %s' % (
-                self.usage().replace('%prog', self.prog_name), ))
+            self.usage().replace('%prog', self.prog_name), ))
 
     def parse_options(self, prog_name, arguments):
         """Parse the available options."""

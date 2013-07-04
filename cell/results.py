@@ -46,7 +46,7 @@ class AsyncResult(object):
     def _gather(self, *args, **kwargs):
         propagate = kwargs.pop('propagate', True)
         return (self.to_python(reply, propagate=propagate)
-                    for reply in self.actor._collect_replies(*args, **kwargs))
+                for reply in self.actor._collect_replies(*args, **kwargs))
 
     def to_python(self, reply, propagate=True):
         try:

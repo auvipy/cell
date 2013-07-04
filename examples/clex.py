@@ -22,7 +22,6 @@ class BlenderActor(cell.Actor):
             print('communicates with the blender process here')
             return 'value'
 
-
     # - It is good practice to provide helper methods, so that
     # - clients don't have to use .call, etc directly
 

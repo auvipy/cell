@@ -58,7 +58,7 @@ class Entry(object):
 
     def __repr__(self):
         return '<Entry: %r (%s)>' % (
-                    self.fun, 'cancelled' if self.cancelled else 'alive')
+            self.fun, 'cancelled' if self.cancelled else 'alive')
 
 
 def timer(interval, fun, *args, **kwargs):

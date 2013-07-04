@@ -60,7 +60,6 @@ class test_Actor(Case):
     def test_contributes_to_state(self):
         """test that Actor.contributes_to_state"""
 
-
         class Stateful(Actor):
 
             class state(object):

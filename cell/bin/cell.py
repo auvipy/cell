@@ -17,18 +17,18 @@ class cell(Command):
     args = '<agent object names>'
 
     option_list = (
-            Option('-i', '--id',
-                default=None, action='store', dest='id',
-                help='Id of the agent (or automatically generated).'),
-            Option('-l', '--loglevel',
-                default=None, action='store', dest='loglevel',
-                help='Loglevel (CRITICAL/ERROR/WARNING/INFO/DEBUG).'),
-            Option('-f', '--logfile',
-                default=None, action='store', dest='logfile',
-                help='Logfile. Default is stderr.'),
-            Option('-b', '--broker',
-                default=DEFAULT_BROKER_URL, action='store', dest='broker',
-                help='Broker URL. Default is %s' % (DEFAULT_BROKER_URL, )),
+        Option('-i', '--id',
+               default=None, action='store', dest='id',
+               help='Id of the agent (or automatically generated).'),
+        Option('-l', '--loglevel',
+               default=None, action='store', dest='loglevel',
+               help='Loglevel (CRITICAL/ERROR/WARNING/INFO/DEBUG).'),
+        Option('-f', '--logfile',
+               default=None, action='store', dest='logfile',
+               help='Logfile. Default is stderr.'),
+        Option('-b', '--broker',
+               default=DEFAULT_BROKER_URL, action='store', dest='broker',
+               help='Broker URL. Default is %s' % (DEFAULT_BROKER_URL, )),
         )
 
     def run(self, *actors, **kwargs):

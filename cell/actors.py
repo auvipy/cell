@@ -137,7 +137,7 @@ class Actor(object):
         pass
 
     def __init__(self, connection=None, id=None, name=None, exchange=None,
-            logger=None, agent=None, outbox_exchange=None, **kwargs):
+                 logger=None, agent=None, outbox_exchange=None, **kwargs):
         self.connection = connection
         self.id = id or uuid()
         self.name = name or self.name or self.__class__.__name__
@@ -153,12 +153,9 @@ class Actor(object):
             self.exchange = Exchange('cl.%s' % self.name, 'direct')
 
         typemap = {
-            ACTOR_TYPE.DIRECT:
-                [self.get_direct_queue, self._inbox_direct],
-            ACTOR_TYPE.RR:
-                [self.get_rr_queue, self._inbox_rr],
-            ACTOR_TYPE.SCATTER:
-                [self.get_scatter_queue, self._inbox_scatter]
+            ACTOR_TYPE.DIRECT: [self.get_direct_queue, self._inbox_direct],
+            ACTOR_TYPE.RR: [self.get_rr_queue, self._inbox_rr],
+            ACTOR_TYPE.SCATTER: [self.get_scatter_queue, self._inbox_scatter]
         }
 
         self.type_to_queue = dict((k, v[0]) for k, v in typemap.iteritems())
@@ -179,14 +176,14 @@ class Actor(object):
         self.construct()
 
     def _add_binding(self, source, routing_key='',
-            inbox_type=ACTOR_TYPE.DIRECT):
+                     inbox_type=ACTOR_TYPE.DIRECT):
         source_exchange = Exchange(**source)
         binder = self.get_binder(inbox_type)
         maybe_declare(source_exchange, self.connection.default_channel)
         binder(exchange=source_exchange, routing_key=routing_key)
 
     def _remove_binding(self, source, routing_key='',
-            inbox_type=ACTOR_TYPE.DIRECT):
+                        inbox_type=ACTOR_TYPE.DIRECT):
         source_exchange = Exchange(**source)
         unbinder = self.get_unbinder(inbox_type)
         unbinder(exchange=source_exchange, routing_key=routing_key)
@@ -215,7 +212,7 @@ class Actor(object):
         return unbinder
 
     def add_binding(self, source, routing_key='',
-            inbox_type=ACTOR_TYPE.DIRECT, send_to=ACTOR_TYPE.DIRECT):
+                    inbox_type=ACTOR_TYPE.DIRECT, send_to=ACTOR_TYPE.DIRECT):
 
         self.call('add_binding', {
             'source': source.as_dict(),
@@ -224,7 +221,8 @@ class Actor(object):
         }, type=send_to)
 
     def remove_binding(self, source, routing_key='',
-            inbox_type=ACTOR_TYPE.DIRECT, send_to=ACTOR_TYPE.DIRECT):
+                       inbox_type=ACTOR_TYPE.DIRECT,
+                       send_to=ACTOR_TYPE.DIRECT):
 
         self.call('remove_binding', {
             'source': source.as_dict(),
@@ -402,7 +400,7 @@ class Actor(object):
         return producer.publish(body, **props)
 
     def emit(self, method, args={}, before=None, retry=None,
-            retry_policy=None, type=None, exchange=None, **props):
+             retry_policy=None, type=None, exchange=None, **props):
         """Send message to actor's outbox."""
         retry = self.retry if retry is None else retry
         body = {'class': self.name, 'method': method, 'args': args}
@@ -422,7 +420,7 @@ class Actor(object):
                  **(retry_policy or {}))
 
     def cast(self, method, args={}, before=None, retry=None,
-            retry_policy=None, type=None, **props):
+             retry_policy=None, type=None, **props):
         """Send message to actor.  Discarding replies."""
         retry = self.retry if retry is None else retry
         body = {'class': self.name, 'method': method, 'args': args}

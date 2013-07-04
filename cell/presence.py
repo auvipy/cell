@@ -168,7 +168,7 @@ class Presence(ConsumerMixin):
 
     def _announce(self, event, producer=None):
         producer.publish(event, exchange=self.exchange.name,
-                                routing_key=self.agent.id)
+                         routing_key=self.agent.id)
 
     def announce(self, event, **retry_policy):
         return ipublish(producers[self.agent.connection],

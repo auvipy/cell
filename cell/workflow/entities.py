@@ -30,7 +30,7 @@ class Workflow(object):
 
     def __setitem__(self, to_role, to_role_addr):
         print("Conv._add_to_conv_table: to_role:%s, to_role_addr:%s" % (
-                to_role, to_role_addr))
+              to_role, to_role_addr))
         if to_role in self._conv_table and \
                 isinstance(self._conv_table[to_role], AsyncResult):
             self._wf_table[to_role].set(to_role_addr)

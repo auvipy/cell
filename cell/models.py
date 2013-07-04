@@ -35,7 +35,7 @@ class ModelConsumer(Consumer):
 
     def sync_queues(self, keep_queues=[]):
         expected = [getattr(obj, self.field)
-                        for obj in self.model._default_manager.enabled()]
+                    for obj in self.model._default_manager.enabled()]
         queues = set()
         create = self.create_queue
 
