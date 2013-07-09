@@ -16,11 +16,11 @@ my_app = celery.Celery(broker='pyamqp://guest@localhost//')
 #t = TestActor()
 
 """ Simple scenario.
-    We have a Filter that filter collections and we want every result
-    to be send to Logger that do intensive computation on the filtered result
-    and to a Printer that do diverse visualizations.
-    The topology looks like that:
-    Filter -> (Logger | Printer)
+We have a Filter that filter collections and we want every result
+to be send to Logger that do intensive computation on the filtered result
+and to a Printer that do diverse visualizations.
+The topology looks like that:
+Filter -> (Logger | Printer)
 """
 
 
@@ -205,8 +205,7 @@ if __name__ == '__main__':
         printer = Printer()
         actors_mng.add_actor(printer)
 
-"""
-Example usage:
+"""Example usage:
 >>from examples.workflow import Printer, Logger, actors_mng
 >>pr = Printer()
 Start 2 actors of type Printer remotely
