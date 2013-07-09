@@ -9,6 +9,7 @@ from itertools import count
 from operator import itemgetter
 
 from kombu import Consumer, Exchange, Queue
+import kombu
 from kombu.common import (collect_replies, ipublish, isend_reply,
                           maybe_declare, uuid)
 from kombu.log import Log
@@ -83,7 +84,7 @@ class Actor(object):
     #:         Send the message to an agent by round-robin.
     #:     * scatter
     #:         Send the message to all of the agents (broadcast).
-    types = (ACTOR_TYPE.DIRECT, )
+    types = (ACTOR_TYPE.DIRECT, ACTOR_TYPE.SCATTER, ACTOR_TYPE.RR)
 
     #: Default serializer used to send messages and reply messages.
     serializer = 'json'
@@ -141,7 +142,6 @@ class Actor(object):
         self.connection = connection
         self.id = id or uuid()
         self.name = name or self.name or self.__class__.__name__
-        self.exchange = exchange or self.exchange
         self.outbox_exchange = outbox_exchange or self.outbox_exchange
         self.agent = agent
 
@@ -149,8 +149,7 @@ class Actor(object):
             self.default_fields = {}
 
         # - setup exchanges and queues
-        if not self.exchange:
-            self.exchange = Exchange('cl.%s' % self.name, 'direct')
+        self.exchange = exchange or self.get_direct_exchange()
 
         typemap = {
             ACTOR_TYPE.DIRECT: [self.get_direct_queue, self._inbox_direct],
@@ -328,7 +327,7 @@ class Actor(object):
         on the value of `nowait`.
 
         :param method: The name of the remote method to perform.
-        :keyword args: Dictionary of arguments for the method.
+        :param args: Dictionary of arguments for the method.
         :keyword nowait: If false the call will be block until the result
            is available and return it (default), if true the call will be
            non-blocking.
@@ -351,34 +350,36 @@ class Actor(object):
         return (nowait and self.cast or self.call)(method, args, **kwargs)
 
     def get_scatter_exchange(self):
-        """Returns a unique exchange that can be used to listen for messages
-        to this class."""
+        """Returns a :class:'kombu.Exchange' instance with type set to fanout"""
         return Exchange('cl.scatter.%s' % self.name, 'fanout')
 
     def get_rr_exchange(self):
-        """Returns a unique exchange that can be used to listen for messages
-        to this class."""
+        """Returns a :class:'kombu.Exchange' instance with type set to fanout.
+         The exchange is to be used for receiving messages in a round-robin style"""
         return Exchange('cl.rr.%s' % self.name, 'fanout')
 
     def get_direct_exchange(self):
-        """Returns a unique exchange that can be used to listen for messages
-        to this class."""
-        return self.exchange
+        """Returns a :class:'kombu.Exchange' with type direct"""
+        return Exchange('cl.%s' % self.name, 'direct')
 
     def get_queues(self):
         return [self.type_to_queue[type]() for type in self.types]
 
     def get_direct_queue(self):
-        """Returns a unique queue that can be used to listen for messages
-        to this class."""
+        """Returns a :class: `kombu.Queue` instance to be used to listen for messages
+        send to this specific Actor instance"""
         return Queue(self.id, self.inbox_direct, routing_key=self.routing_key,
                      auto_delete=True)
 
     def get_scatter_queue(self):
+        """Returns a :class: `kombu.Queue` instance for receiving broadcast
+        commands for this actor type."""
         return Queue('%s.%s.scatter' % (self.name, self.id),
                      self.inbox_scatter, auto_delete=True)
 
     def get_rr_queue(self):
+        """Returns a :class: `kombu.Queue` instance for receiving round-robin
+        commands for this actor type."""
         return Queue(self.inbox_rr.name + '.rr', self.inbox_rr,
                      auto_delete=True)
 
@@ -388,7 +389,7 @@ class Actor(object):
                          'x-expires': int(self.reply_expires * 1000)})
 
     def Consumer(self, channel, **kwargs):
-        """Returns a :class:`kombu.Consumer` instance for this Actor."""
+        """Returns a :class:`kombu.Consumer` instance for this Actor"""
         kwargs.setdefault('no_ack', self.no_ack)
         return Consumer(channel, self.get_queues(),
                         callbacks=[self.on_message], **kwargs)
@@ -399,28 +400,11 @@ class Actor(object):
         maybe_declare(props['exchange'], producer.channel)
         return producer.publish(body, **props)
 
-    def emit(self, method, args={}, before=None, retry=None,
-             retry_policy=None, type=None, exchange=None, **props):
-        """Send message to actor's outbox."""
-        retry = self.retry if retry is None else retry
-        body = {'class': self.name, 'method': method, 'args': args}
-        exchange = self.outbox
-        _retry_policy = self.retry_policy
-        if retry_policy:  # merge default and custom policies.
-            _retry_policy = dict(_retry_policy, **retry_policy)
-
-        props.setdefault('routing_key', self.routing_key)
-        props.setdefault('serializer', self.serializer)
-
-        props = dict(props, exchange=exchange, before=before)
-        con = producers[self._connection]
-        print'connection is:', con
-        ipublish(con, self._publish,
-                 (body, ), dict(props, exchange=exchange, before=before),
-                 **(retry_policy or {}))
+    def emit(self, method, args={}, retry=None):
+        return self.cast(method, args, retry=retry, exchange = self.outbox)
 
     def cast(self, method, args={}, before=None, retry=None,
-             retry_policy=None, type=None, **props):
+             retry_policy=None, type=None, exchange=None, **props):
         """Send message to actor.  Discarding replies."""
         retry = self.retry if retry is None else retry
         body = {'class': self.name, 'method': method, 'args': args}
@@ -430,7 +414,7 @@ class Actor(object):
             _retry_policy = dict(_retry_policy, **retry_policy)
 
         #if type:
-        #    props.setdefault('routing_key', self.type_to_rkey[type])
+        #     props.setdefault('routing_key', self.type_to_rkey[type])
         if type and type not in self.types:
             raise Exception('the type:%s is not supported', type)
         elif not type:
@@ -438,7 +422,7 @@ class Actor(object):
 
         props.setdefault('routing_key', self.routing_key)
         props.setdefault('serializer', self.serializer)
-        exchange = self.type_to_exchange[type]()
+        exchange = exchange or self.type_to_exchange[type]()
         print 'exchange we are sending to is:', exchange.name
         props = dict(props, exchange=exchange, before=before)
 
@@ -614,8 +598,6 @@ class Actor(object):
         return self._inbox_rr()
 
     def _inbox_direct(self):
-        if not self.exchange:
-            self.exchange = self.get_direct_exchange()
         return self.exchange
 
     @property
