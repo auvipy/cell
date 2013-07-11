@@ -349,12 +349,12 @@ class Actor(object):
         return (nowait and self.cast or self.call)(method, args, **kwargs)
 
     def get_scatter_exchange(self):
-        """Returns a :class:'kombu.Exchange' instance with type set to fanout"""
+        """Returns a :class:'kombu.Exchange' for type fanout"""
         return Exchange('cl.scatter.%s' % self.name, 'fanout')
 
     def get_rr_exchange(self):
         """Returns a :class:'kombu.Exchange' instance with type set to fanout.
-         The exchange is to be used for receiving messages in a round-robin style"""
+         The exchange is used for sending in a round-robin style"""
         return Exchange('cl.rr.%s' % self.name, 'fanout')
 
     def get_direct_exchange(self):
@@ -365,8 +365,8 @@ class Actor(object):
         return [self.type_to_queue[type]() for type in self.types]
 
     def get_direct_queue(self):
-        """Returns a :class: `kombu.Queue` instance to be used to listen for messages
-        send to this specific Actor instance"""
+        """Returns a :class: `kombu.Queue` instance to be used to listen
+         for messages send to this specific Actor instance"""
         return Queue(self.id, self.inbox_direct, routing_key=self.routing_key,
                      auto_delete=True)
 

@@ -1,8 +1,9 @@
 from __future__ import absolute_import
+import ast
 
 from kombu import Connection
 from kombu.common import uuid, maybe_declare
-from mock import patch
+from mock import patch, ANY
 from cell.actors import Actor
 from cell.results import AsyncResult
 from cell.tests.utils import Case, Mock
@@ -25,12 +26,54 @@ class ScatterActor(Actor):
     type = (ACTOR_TYPE.RR, )
 
 
+class MyCustomException(Exception):
+    pass
+
+
+def clean_up_consumers(consumers):
+    for c in consumers:
+        for q in c.queues:
+            q.purge()
+
+
 def get_next_msg(consumer):
         for q in consumer.queues:
             next_msg = q.get()
             if next_msg:
                 consumer.channel.basic_ack(next_msg.delivery_tag)
                 return next_msg
+
+
+def get_test_message(method='foo', args={'bar': 'foo_arg'},
+                     class_name=None, reply_to=None, delivery_tag=None):
+    with Connection('memory://') as conn:
+        ch = conn.channel()
+
+        body = {'method': method, 'args': args, 'class': class_name}
+        data = ch.prepare_message(body)
+        data['properties']['reply_to'] = reply_to
+        delivery_tag = delivery_tag or uuid()
+        data['properties']['delivery_tag'] = delivery_tag
+
+        return body, ch.message_to_python(data)
+
+
+def get_encoded_test_message(method='foo', args={'bar': 'foo_arg'},
+                             class_name=A.__class__.__name__,
+                             reply_to=None, delivery_tag=None):
+    with Connection('memory://') as conn:
+        ch = conn.channel()
+
+        body = {'method': method, 'args': args, 'class': class_name}
+        c_body, compression = compress(str(body), 'gzip')
+        data = ch.prepare_message(c_body, content_type='application/json',
+                                  content_encoding='utf-8',
+                                  headers={'compression': compression})
+        data['properties']['reply_to'] = reply_to
+        delivery_tag = delivery_tag or uuid()
+        data['properties']['delivery_tag'] = delivery_tag
+        return body, ch.message_to_python(data)
+
 
 def with_in_memory_connection(fn):
         from functools import wraps
@@ -40,10 +83,6 @@ def with_in_memory_connection(fn):
                 with Connection('memory://') as conn:
                     fn(self, conn, *args, **kw)
         return wrapper
-
-
-class MyCustomException(Exception):
-    pass
 
 
 class test_Actor(Case):
@@ -139,6 +178,9 @@ class test_Actor(Case):
         self.assertTupleEqual(a2.state.contributed, (1, a2))
         with self.assertRaises(AttributeError):
             a2.state.actor
+#-----------------------------------------------------------------
+# Test the API for invoking a remote method
+#-----------------------------------------------------------------
 
     def test_throw(self):
         # Set Up
@@ -156,7 +198,7 @@ class test_Actor(Case):
         self.assertEquals(result, return_val)
         a.call_or_cast.reset_mock()
 
-        # when throw is invoked with bnoWait=True, no result is returned
+        # when throw is invoked with no_wait=True, no result is returned
         result = a.throw(method, args, nowait=True)
         a.call_or_cast.assert_called_once_with(method, args,
                                                type=ACTOR_TYPE.RR,
@@ -164,7 +206,7 @@ class test_Actor(Case):
         self.assertIsNone(result)
         a.call_or_cast.reset_mock()
 
-        # when throw is invoke without arguments
+        # when throw is invoked without arguments
         # empty list is passed to call_or_cast
         a.throw(method)
         a.call_or_cast.assert_called_once_with(method, {},
@@ -323,13 +365,80 @@ class test_Actor(Case):
         self.assertEquals(res.ticket, ticket)
 
 #-----------------------------------------------------------------
-# Test invoke remote method functionality
+# Test the cast method
 #-----------------------------------------------------------------
 
-    def clean_up_consumers(self, consumers):
-        for c in consumers:
-            for q in c.queues:
-                q.purge()
+    @patch('kombu.transport.memory.Channel.basic_publish')
+    def assert_cast_calls_basic_publish_with(self, a, routing_key,
+                                             exchange, type, mocked_publish):
+            method, args = 'foo', {'bar': 'foo_arg'}
+            type = type or ACTOR_TYPE.DIRECT
+            ticket = uuid()
+            expected_body, _ = get_test_message(
+                method, args, a.__class__.__name__, reply_to=ticket)
+
+            a.cast(method, args, type=type)
+
+            mocked_publish.assert_called_once_with(
+                ANY, immediate=ANY, mandatory=ANY,
+                exchange=exchange, routing_key=routing_key)
+
+            (message, ), _ = mocked_publish.call_args
+            body = ast.literal_eval(message.get('body'))
+            self.assertDictEqual(body, expected_body)
+
+    @with_in_memory_connection
+    def test_cast_calls_basic_publish_with_correct_exchange(self, conn):
+        a = A(conn)
+        rk = a.routing_key
+
+        direct_exchange = a.type_to_exchange[ACTOR_TYPE.DIRECT]()
+        self.assert_cast_calls_basic_publish_with(
+            a, rk, direct_exchange.name, ACTOR_TYPE.DIRECT)
+
+        fanout_exchange = a.type_to_exchange[ACTOR_TYPE.SCATTER]()
+        self.assert_cast_calls_basic_publish_with(
+            a, rk, fanout_exchange.name, ACTOR_TYPE.SCATTER)
+
+        rr_exchange = a.type_to_exchange[ACTOR_TYPE.RR]()
+        self.assert_cast_calls_basic_publish_with(
+            a, rk, rr_exchange.name, ACTOR_TYPE.RR)
+
+    @with_in_memory_connection
+    def test_cast_calls_basic_publish_with_correct_rk(self, conn):
+        a = A(conn)
+        exch = a.type_to_exchange[ACTOR_TYPE.DIRECT]().name
+
+        a = A(conn)
+        rk = a.routing_key
+        self.assert_cast_calls_basic_publish_with(a, rk, exch, None)
+
+        agent = Mock(id=uuid())
+        a = A(conn, agent=agent)
+        rk = a.routing_key
+
+        self.assertEquals(a.routing_key, agent.id)
+        self.assert_cast_calls_basic_publish_with(a, rk, exch, None)
+
+        a = A(conn, agent=agent)
+        a.default_routing_key = 'fooooooooo'
+        rk = a.routing_key
+
+        self.assertEquals(a.routing_key, rk)
+        self.assert_cast_calls_basic_publish_with(a, rk, exch, None)
+
+        a = A(conn)
+        a.default_routing_key = 'fooooooooo'
+        rk = a.routing_key
+
+        self.assertEquals(a.routing_key, rk)
+        self.assert_cast_calls_basic_publish_with(a, rk, exch, None)
+
+    @with_in_memory_connection
+    def test_cast_not_supported_type(self, conn):
+        a = A(conn)
+        with self.assertRaises(Exception):
+            a.cast(method='foo', args={}, type='my_type')
 
     @with_in_memory_connection
     def test_cast_direct(self, conn):
@@ -350,16 +459,14 @@ class test_Actor(Case):
         self.assertNextMsgDataEqual(a_con, data_no_args)
         self.assertIsNone(get_next_msg(b_con))
 
-        # verify the default behaviour
-        # is invoking cast with type = ACTOR_TYPE.DIRECT
-        # when cast is invoked with type=DIRECT
-        # the message is delivered only to its actor,
+        # when cast is invoked with type = ACTOR_TYPE_DIRECT:
+        # the message is delivered only to its actor and to no one else,
         a.cast(method=data_with_args['method'], args=data_with_args['args'],
                type=ACTOR_TYPE.DIRECT)
         self.assertNextMsgDataEqual(a_con, data_with_args)
         self.assertIsNone(get_next_msg(b_con))
 
-        self.clean_up_consumers([a_con, b_con])
+        clean_up_consumers([a_con, b_con])
 
     @with_in_memory_connection
     def test_cast_scatter(self, conn):
@@ -390,7 +497,7 @@ class test_Actor(Case):
         self.assertIsNone(get_next_msg(d_con))
         self.assertIsNone(get_next_msg(e_con))
 
-        self.clean_up_consumers([a_con, b_con, c_con, d_con, e_con])
+        clean_up_consumers([a_con, b_con, c_con, d_con, e_con])
 
     @with_in_memory_connection
     def test_cast_round_robin_send_once(self, conn):
@@ -415,7 +522,7 @@ class test_Actor(Case):
         self.assertTrue((a_msg or b_msg) and (not(a_msg and b_msg)))
         self.assertIsNone(get_next_msg(c_con))
 
-        self.clean_up_consumers([a_con, b_con, c_con])
+        clean_up_consumers([a_con, b_con, c_con])
 
     @with_in_memory_connection
     def test_cast_round_robin_send_repeatedly(self, conn):
@@ -438,48 +545,12 @@ class test_Actor(Case):
         self.assertNextMsgDataEqual(b_con, data_with_args)
         self.assertIsNone(get_next_msg(c_con))
 
-        self.clean_up_consumers([a_con, b_con, c_con])
-
-    @with_in_memory_connection
-    def test_cast_not_supported_type(self, conn):
-        a = A(conn)
-        with self.assertRaises(Exception):
-            a.cast(method='foo', args={}, type='my_type')
+        clean_up_consumers([a_con, b_con, c_con])
 
 #-----------------------------------------------------------------
 # Test functionality for correct dispatch of method calls
-#-----------------------------------------------------------------
-
-    def initialise_message(self, method='foo', args={'bar': 'foo_arg'},
-                           class_name=A.__class__.__name__,
-                           reply_to=None, delivery_tag=None):
-        with Connection('memory://') as conn:
-            ch = conn.channel()
-
-            body = {'method': method, 'args': args, 'class': class_name}
-            data = ch.prepare_message(body)
-            data['properties']['reply_to'] = reply_to
-            data['properties']['delivery_tag'] = delivery_tag \
-                                                 if delivery_tag else uuid()
-            return body, ch.message_to_python(data)
-
-    def initialise_message1(self, method='foo', args={'bar': 'foo_arg'},
-                            class_name=A.__class__.__name__,
-                            reply_to=None, delivery_tag=None):
-        with Connection('memory://') as conn:
-            ch = conn.channel()
-
-            body = {'method': method, 'args': args, 'class': class_name}
-            c_body, compression = compress(str(body), 'gzip')
-            data = ch.prepare_message(c_body, content_type='application/json',
-                                      content_encoding='utf-8',
-                                      headers={'compression': compression})
-            data['properties']['reply_to'] = reply_to
-            data['properties']['delivery_tag'] = delivery_tag \
-                                                 if delivery_tag else uuid()
-            return body, ch.message_to_python(data)
-
-    def test_on_message_when_reply_to_set(self):
+#--------------------------------------------------------------------------
+    def test_on_message_when_reply_to_is_set(self):
 
         class Foo(Actor):
             class state():
@@ -491,9 +562,9 @@ class test_Actor(Case):
 
         args, ret_val = {'bar': 'foo_arg'}, 'foooo'
         ticket = uuid()
-        body, message = self.initialise_message('foo', args,
-                                                Foo.__class__.__name__,
-                                                reply_to=[ticket])
+        body, message = get_test_message(
+            'foo', args, Foo.__class__.__name__, reply_to=[ticket])
+
         a = Foo()
         a.reply = Mock()
 
@@ -515,8 +586,8 @@ class test_Actor(Case):
                     return (bar, ret_val)
 
         # when the property reply_to is not set, reply is not called
-        body, message = self.initialise_message('foo', {'bar': 'foo_arg'},
-                                                Foo.__class__.__name__)
+        body, message = get_test_message(
+            'foo', {'bar': 'foo_arg'}, Foo.__class__.__name__)
         message.ack = Mock()
         a = Foo()
         a.reply = Mock()
@@ -532,8 +603,8 @@ class test_Actor(Case):
 
     def test_on_message_invokes_on_dispatch_when_reply_to_not_set(self):
         ret_val = 'fooo'
-        body, message = self.initialise_message('foo', {'bar': 'foo_arg'},
-                                                A.__class__.__name__)
+        body, message = get_test_message('foo', {'bar': 'foo_arg'},
+                                         A.__class__.__name__)
         a = A()
         a.reply = Mock()
         a._DISPATCH = Mock(return_value=ret_val)
@@ -549,9 +620,9 @@ class test_Actor(Case):
     def test_on_message_invokes_on_dispatch_when_reply_to_set(self):
         ret_val = 'fooo'
         ticket = uuid()
-        body, message = self.initialise_message('foo', {'bar': 'foo_arg'},
-                                                A.__class__.__name__,
-                                                reply_to=ticket)
+        body, message = get_test_message('foo', {'bar': 'foo_arg'},
+                                         A.__class__.__name__,
+                                         reply_to=ticket)
         a = A()
         a.reply = Mock()
         a._DISPATCH = Mock(return_value=ret_val)
@@ -572,8 +643,8 @@ class test_Actor(Case):
                     self.foo_called = True
                     return (bar, ret_val)
 
-        body, message = self.initialise_message('', {'bar': 'foo_arg'},
-                                                Foo.__class__.__name__)
+        body, message = get_test_message('', {'bar': 'foo_arg'},
+                                         Foo.__class__.__name__)
         message.ack = Mock()
         a = Foo()
         a.default_receive = Mock()
@@ -586,8 +657,8 @@ class test_Actor(Case):
         self.assertIsNone(result)
 
     def test_on_message_when_private_method_is_passed(self):
-        body, message = self.initialise_message('_foo', {},
-                                                A.__class__.__name__)
+        body, message = get_test_message('_foo', {},
+                                         A.__class__.__name__)
 
         message.ack = Mock()
         a = A()
@@ -602,8 +673,8 @@ class test_Actor(Case):
     def test_on_message_when_unexisted_method_is_passed(self):
         args, ret_val = {'bar': 'foo_arg'}, 'fooo'
 
-        body, message = self.initialise_message('bar', {'bar': 'foo_arg'},
-                                                A.__class__.__name__)
+        body, message = get_test_message('bar', {'bar': 'foo_arg'},
+                                         A.__class__.__name__)
         message.ack = Mock()
         a = A()
         a.default_receive = Mock()
@@ -614,9 +685,9 @@ class test_Actor(Case):
         message.ack.assert_called_once_with()
         self.assertIsNone(result)
 
-    def on_message_when_exception_occurs(self, exception_cls, ack_count):
-        body, message = self.initialise_message('bar', {'bar': 'foo_arg'},
-                                                A.__class__.__name__)
+    def assert_on_message_exception_raise(self, exception_cls, ack_count):
+        body, message = get_test_message('bar', {'bar': 'foo_arg'},
+                                         A.__class__.__name__)
         a = A()
         message.ack = Mock()
 
@@ -631,21 +702,21 @@ class test_Actor(Case):
 
         message.ack = Mock()
         a.handle_call = Mock(side_effect=exception_cls('Boom'))
-        body, message = self.initialise_message('bar', {'bar': 'foo_arg'},
-                                                A.__class__.__name__,
-                                                reply_to=[uuid])
+        body, message = get_test_message('bar', {'bar': 'foo_arg'},
+                                         A.__class__.__name__,
+                                         reply_to=[uuid])
 
         with self.assertRaises(exception_cls):
             a.on_message(body, message)
             self.assertEquals(message.ack.call_count, ack_count)
 
-    def test_on_message_when_base_exception_occur(self):
+    def test_on_message_when_base_exception_occurs(self):
         # Do not ack the message if an exceptional error occurs,
-        self.on_message_when_exception_occurs(Exception, 0)
+        self.assert_on_message_exception_raise(Exception, 0)
         # but do ack the message if BaseException
         # (SystemExit or KeyboardInterrupt)
         # is raised, as this is probably intended.
-        self.on_message_when_exception_occurs(BaseException, 1)
+        self.assert_on_message_exception_raise(BaseException, 1)
 
     def test_dispatch_return_values(self):
         """In the case of a successful call the return value will
@@ -664,9 +735,10 @@ class test_Actor(Case):
 
         # when result is correct
         ret_val = 'foooo'
-        body, message = self.initialise_message('bar', {'bar': 'foo_arg'},
-                                                A.__class__.__name__)
         a = A()
+        body, message = get_test_message('bar', {'bar': 'foo_arg'},
+                                         a.__class__.__name__)
+
         expected_result = {'ok': ret_val}
         a.state.bar = Mock(return_value=ret_val)
 
@@ -686,8 +758,8 @@ class test_Actor(Case):
         self.assertNotIn('nok', result)
 
         # when method does not exist
-        body, message = self.initialise_message('foo', {'bar': 'foo_arg'},
-                                                A.__class__.__name__)
+        body, message = get_test_message(
+            'foo', {'bar': 'foo_arg'}, a.__class__.__name__)
 
         result = a._DISPATCH(body)
 
@@ -695,8 +767,8 @@ class test_Actor(Case):
         self.assertIn("KeyError('foo',)", result['nok'])
 
         # when calling a private method
-        body, message = self.initialise_message('_foo', {'bar': 'foo_arg'},
-                                                A.__class__.__name__)
+        body, message = get_test_message(
+            '_foo', {'bar': 'foo_arg'}, a.__class__.__name__)
 
         a._foo = Mock()
         result = a._DISPATCH(body)
@@ -705,8 +777,8 @@ class test_Actor(Case):
         self.assertIn("KeyError('_foo',)", result['nok'])
 
         # when calling a private method
-        body, message = self.initialise_message('__foo', {'bar': 'foo_arg'},
-                                                A.__class__.__name__)
+        body, message = get_test_message(
+            '__foo', {'bar': 'foo_arg'}, a.__class__.__name__)
 
         a.__foo = Mock()
         result = a._DISPATCH(body)
@@ -715,9 +787,9 @@ class test_Actor(Case):
         self.assertIn("KeyError('__foo',)", result['nok'])
 
         # when method called raises an exception
-        body, message = self.initialise_message('foo_with_exception',
-                                                {'bar': 'foo_arg'},
-                                                A.__class__.__name__)
+        body, message = get_test_message('foo_with_exception',
+                                         {'bar': 'foo_arg'},
+                                         a.__class__.__name__)
 
         a.foo_with_exception = Mock(side_effect=Exception('FooError'))
         result = a._DISPATCH(body)
@@ -726,7 +798,7 @@ class test_Actor(Case):
         self.assertIn("KeyError('foo_with_exception',)", result['nok'])
 
     @with_in_memory_connection
-    def test_on_message_send_to_reply_queue(self, conn):
+    def test_on_message_is_sending_to_reply_queue(self, conn):
         ret_result = 'foooo'
 
         class Foo(A):
@@ -737,7 +809,7 @@ class test_Actor(Case):
         a = Foo(conn)
         ticket = uuid()
         delivery_tag = uuid()
-        body, message = self.initialise_message1('bar', {'my_bar': 'bar_arg'},
+        body, message = get_encoded_test_message('bar', {'my_bar': 'bar_arg'},
                                                  A.__class__.__name__,
                                                  reply_to=ticket,
                                                  delivery_tag=delivery_tag)
@@ -755,7 +827,7 @@ class test_Actor(Case):
         self.assertNextMsgDataEqual(a_con, {'ok': ret_result})
 
     @with_in_memory_connection
-    def test_reply_queue_is_declared_after_called_is_Invoked(self, conn):
+    def test_reply_queue_is_declared_after_call(self, conn):
         ticket = uuid()
         with patch('cell.actors.uuid') as new_uuid:
             new_uuid.return_value = ticket
@@ -774,12 +846,12 @@ class test_Actor(Case):
                 reply_q(conn.channel()).queue_declare(passive=True))
 
     @with_in_memory_connection
-    def test_reply_send_the_exact_msg_body_to_the_reply_queue(self, conn):
+    def test_reply_send_correct_msg_body_to_the_reply_queue(self, conn):
         a = A(conn)
         ticket = uuid()
         delivery_tag = 2
-        body, message = self.initialise_message1('bar', {'my_bar': 'bar_arg'},
-                                                 A.__class__.__name__,
+        body, message = get_encoded_test_message('bar', {'my_bar': 'bar_arg'},
+                                                 a.__class__.__name__,
                                                  reply_to=ticket,
                                                  delivery_tag=delivery_tag)
 
@@ -805,6 +877,7 @@ class test_Actor(Case):
         exchange = actor.type_to_exchange[type]()
         exchange.bind_to = Mock()
         exchange.exchange_unbind = Mock()
+        exchange.declare = Mock()
         actor.type_to_exchange[type] = Mock(return_value=exchange)
 
         return exchange
@@ -813,12 +886,13 @@ class test_Actor(Case):
         queue = actor.type_to_queue[type]()
         queue.bind_to = Mock()
         queue.unbind_from = Mock()
-        actor.type_to_queue[type] = Mock(return_value=  queue)
+        queue.declare = Mock()
+        actor.type_to_queue[type] = Mock(return_value=queue)
 
         return queue
 
     @with_in_memory_connection
-    def test_add_remove_binding_when_actor_type_direct(self, conn):
+    def test_add_remove_binding_for_direct_type(self, conn):
         # Add binding between the inbox queue
         # of one actor to the outbox queue of another
         a, b = A(conn), A(conn)
@@ -837,9 +911,8 @@ class test_Actor(Case):
         inbox_queue.unbind_from.assert_called_with(
             exchange=source_ex, routing_key=routing_key)
 
-
     @with_in_memory_connection
-    def test_add_remove_binding_when_actor_type_scatter(self, conn):
+    def test_add_remove_binding_for_scatter_type(self, conn):
         a, b = A(conn), A(conn)
         routing_key, mock_entity_type = 'foooo', ACTOR_TYPE.SCATTER
 
@@ -859,7 +932,7 @@ class test_Actor(Case):
             exchange=source_ex, routing_key=routing_key)
 
     @with_in_memory_connection
-    def test_add_remove_binding_when_actor_type_rr(self, conn):
+    def test_add_remove_binding_for_rr_type(self, conn):
         a, b = A(conn), A(conn)
         routing_key, mock_entity_type = 'foooo', ACTOR_TYPE.RR
         dest_exchange = self.mock_exchange(a, mock_entity_type)
@@ -867,17 +940,16 @@ class test_Actor(Case):
 
         a._add_binding(source_ex.as_dict(), routing_key, mock_entity_type)
 
-        dest_exchange.bind_to.assert_called_with(exchange=source_ex,
-                                               routing_key=routing_key)
+        dest_exchange.bind_to.assert_called_with(
+            exchange=source_ex, routing_key=routing_key)
 
         a._remove_binding(source_ex.as_dict(), routing_key, mock_entity_type)
 
         dest_exchange.exchange_unbind.assert_called_with(
             exchange=source_ex, routing_key=routing_key)
 
-
     @with_in_memory_connection
-    def test_add_binding_when_actor_type_not_supported(self, conn):
+    def test_add_binding_when_actor_for_not_supported_type(self, conn):
         a, b = A(conn), A(conn)
         entity_type = 'test'
 
@@ -887,14 +959,14 @@ class test_Actor(Case):
                            routing_key=b.routing_key, inbox_type=entity_type)
 
     @with_in_memory_connection
-    def test_add_remove_binding_when_routing_key_empty(self, conn):
+    def test_add_remove_binding_when_routing_key_is_empty(self, conn):
         a, b = A(conn), A(conn)
         routing_key, mock_entity_type = "", ACTOR_TYPE.SCATTER
         source_ex = Exchange('bar.foo.bar', mock_entity_type)
 
         exchange = self.mock_exchange(a, mock_entity_type)
 
-        a._add_binding(source_ex.as_dict(),routing_key, mock_entity_type)
+        a._add_binding(source_ex.as_dict(), routing_key, mock_entity_type)
 
         exchange.bind_to.assert_called_with(exchange=source_ex,
                                             routing_key=routing_key)
@@ -903,5 +975,3 @@ class test_Actor(Case):
 
         exchange.exchange_unbind.assert_called_with(exchange=source_ex,
                                                     routing_key=routing_key)
-
-
