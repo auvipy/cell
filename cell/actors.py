@@ -9,7 +9,6 @@ from itertools import count
 from operator import itemgetter
 
 from kombu import Consumer, Exchange, Queue
-import kombu
 from kombu.common import (collect_replies, ipublish, isend_reply,
                           maybe_declare, uuid)
 from kombu.log import Log
@@ -190,10 +189,11 @@ class Actor(object):
     def get_binder(self, type):
         if type == ACTOR_TYPE.DIRECT:
             entity = self.type_to_queue[type]()
-            binder = entity.queue_bind
-        else:
+        elif type in self.types:
             entity = self.type_to_exchange[type]()
-            binder = entity.exchange_bind
+        else:
+            raise Exception('the type:%s is not supported', type)
+        binder = entity.bind_to
         #@TODO: Declare probably should not happened here
         entity.maybe_bind(self.connection.default_channel)
         maybe_declare(entity, entity.channel)
@@ -202,7 +202,7 @@ class Actor(object):
     def get_unbinder(self, type):
         if type == ACTOR_TYPE.DIRECT:
             entity = self.type_to_queue[type]()
-            unbinder = entity.unbind
+            unbinder = entity.unbind_from
         else:
             entity = self.type_to_exchange[type]()
             unbinder = entity.exchange_unbind
@@ -211,23 +211,22 @@ class Actor(object):
         return unbinder
 
     def add_binding(self, source, routing_key='',
-                    inbox_type=ACTOR_TYPE.DIRECT, send_to=ACTOR_TYPE.DIRECT):
+                    inbox_type=ACTOR_TYPE.DIRECT):
 
         self.call('add_binding', {
             'source': source.as_dict(),
             'routing_key': routing_key,
             'inbox_type': inbox_type,
-        }, type=send_to)
+        }, type=ACTOR_TYPE.DIRECT)
 
     def remove_binding(self, source, routing_key='',
-                       inbox_type=ACTOR_TYPE.DIRECT,
-                       send_to=ACTOR_TYPE.DIRECT):
+                       inbox_type=ACTOR_TYPE.DIRECT):
 
         self.call('remove_binding', {
             'source': source.as_dict(),
             'routing_key': routing_key,
             'inbox_type':  inbox_type,
-        }, type=send_to)
+        }, type=ACTOR_TYPE.DIRECT)
 
     def construct(self):
         """Actor specific initialization."""
@@ -401,7 +400,7 @@ class Actor(object):
         return producer.publish(body, **props)
 
     def emit(self, method, args={}, retry=None):
-        return self.cast(method, args, retry=retry, exchange = self.outbox)
+        return self.cast(method, args, retry=retry, exchange=self.outbox)
 
     def cast(self, method, args={}, before=None, retry=None,
              retry_policy=None, type=None, exchange=None, **props):
