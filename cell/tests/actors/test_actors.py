@@ -1,12 +1,16 @@
 from __future__ import absolute_import
 
 from kombu import Connection
-from kombu.common import uuid
+from kombu.common import uuid, maybe_declare
 from mock import patch
 from cell.actors import Actor
 from cell.results import AsyncResult
 from cell.tests.utils import Case, Mock
 from cell.actors import ACTOR_TYPE
+from kombu.compression import compress
+from kombu.entity import Exchange
+from kombu.exceptions import StdChannelError
+from kombu.messaging import Consumer
 
 
 class A(Actor):
@@ -28,26 +32,13 @@ def get_next_msg(consumer):
                 consumer.channel.basic_ack(next_msg.delivery_tag)
                 return next_msg
 
-
 def with_in_memory_connection(fn):
         from functools import wraps
 
         @wraps(fn)
         def wrapper(self, *args, **kw):
-            e, be = None, None
-            try:
                 with Connection('memory://') as conn:
-                    try:
-                        fn(self, conn, *args, **kw)
-                    except e:
-                        pass
-            except be:
-                pass
-            finally:
-                if e:
-                    raise e
-                elif be:
-                    raise be
+                    fn(self, conn, *args, **kw)
         return wrapper
 
 
@@ -332,7 +323,7 @@ class test_Actor(Case):
         self.assertEquals(res.ticket, ticket)
 
 #-----------------------------------------------------------------
-# Test cast
+# Test invoke remote method functionality
 #-----------------------------------------------------------------
 
     def clean_up_consumers(self, consumers):
@@ -464,8 +455,25 @@ class test_Actor(Case):
                            reply_to=None, delivery_tag=None):
         with Connection('memory://') as conn:
             ch = conn.channel()
+
             body = {'method': method, 'args': args, 'class': class_name}
             data = ch.prepare_message(body)
+            data['properties']['reply_to'] = reply_to
+            data['properties']['delivery_tag'] = delivery_tag \
+                                                 if delivery_tag else uuid()
+            return body, ch.message_to_python(data)
+
+    def initialise_message1(self, method='foo', args={'bar': 'foo_arg'},
+                            class_name=A.__class__.__name__,
+                            reply_to=None, delivery_tag=None):
+        with Connection('memory://') as conn:
+            ch = conn.channel()
+
+            body = {'method': method, 'args': args, 'class': class_name}
+            c_body, compression = compress(str(body), 'gzip')
+            data = ch.prepare_message(c_body, content_type='application/json',
+                                      content_encoding='utf-8',
+                                      headers={'compression': compression})
             data['properties']['reply_to'] = reply_to
             data['properties']['delivery_tag'] = delivery_tag \
                                                  if delivery_tag else uuid()
@@ -717,6 +725,183 @@ class test_Actor(Case):
         self.assertIn('nok', result)
         self.assertIn("KeyError('foo_with_exception',)", result['nok'])
 
+    @with_in_memory_connection
+    def test_on_message_send_to_reply_queue(self, conn):
+        ret_result = 'foooo'
+
+        class Foo(A):
+            class state:
+                def bar(self, my_bar):
+                    return ret_result
+
+        a = Foo(conn)
+        ticket = uuid()
+        delivery_tag = uuid()
+        body, message = self.initialise_message1('bar', {'my_bar': 'bar_arg'},
+                                                 A.__class__.__name__,
+                                                 reply_to=ticket,
+                                                 delivery_tag=delivery_tag)
+
+        # Set up a reply queue to read from
+        # reply_q and reply_exchange should be set the sender
+        a.reply_exchange = a.reply_exchange.bind(a.connection.default_channel)
+        maybe_declare(a.reply_exchange)
+        reply_q = a.get_reply_queue(ticket)
+        reply_q(a.connection.default_channel).declare()
+
+        a.on_message(body, message)
+
+        a_con = Consumer(conn.channel(), reply_q)
+        self.assertNextMsgDataEqual(a_con, {'ok': ret_result})
+
+    @with_in_memory_connection
+    def test_reply_queue_is_declared_after_called_is_Invoked(self, conn):
+        ticket = uuid()
+        with patch('cell.actors.uuid') as new_uuid:
+            new_uuid.return_value = ticket
+
+            a = A(conn)
+            reply_q = a.get_reply_queue(ticket)
+            a.get_reply_queue = Mock(return_value=reply_q)
+
+            with self.assertRaises(StdChannelError):
+                reply_q(conn.channel()).queue_declare(passive=True)
+
+            a.call(method='foo', args={}, type=ACTOR_TYPE.DIRECT)
+
+            a.get_reply_queue.assert_called_once_with(ticket)
+            self.assertTrue(
+                reply_q(conn.channel()).queue_declare(passive=True))
+
+    @with_in_memory_connection
+    def test_reply_send_the_exact_msg_body_to_the_reply_queue(self, conn):
+        a = A(conn)
+        ticket = uuid()
+        delivery_tag = 2
+        body, message = self.initialise_message1('bar', {'my_bar': 'bar_arg'},
+                                                 A.__class__.__name__,
+                                                 reply_to=ticket,
+                                                 delivery_tag=delivery_tag)
+
+        # Set up a reply queue to read from
+        # reply_q and reply_exchange should be set the sender
+        a.reply_exchange.maybe_bind(a.connection.default_channel)
+        maybe_declare(a.reply_exchange)
+        reply_q = a.get_reply_queue(ticket)
+        reply_q(a.connection.default_channel).declare()
+
+        a.reply(message, body)
+
+        a_con = Consumer(conn.channel(), reply_q)
+        reply_msg = get_next_msg(a_con)
+        reply_body = reply_msg.decode()
+        self.assertEquals(reply_body, body)
+
 #-----------------------------------------------------------------
-# Test all bindings (add_binding, remove_binding)
-#-----------------------------------------------------------------
+# Test actor to actor binding functionality (add_binding, remove_binding)
+# ----------------------------------------------------------------
+
+    def mock_exchange(self, actor, type):
+        exchange = actor.type_to_exchange[type]()
+        exchange.bind_to = Mock()
+        exchange.exchange_unbind = Mock()
+        actor.type_to_exchange[type] = Mock(return_value=exchange)
+
+        return exchange
+
+    def mock_queue(self, actor, type):
+        queue = actor.type_to_queue[type]()
+        queue.bind_to = Mock()
+        queue.unbind_from = Mock()
+        actor.type_to_queue[type] = Mock(return_value=  queue)
+
+        return queue
+
+    @with_in_memory_connection
+    def test_add_remove_binding_when_actor_type_direct(self, conn):
+        # Add binding between the inbox queue
+        # of one actor to the outbox queue of another
+        a, b = A(conn), A(conn)
+        routing_key = 'foooo'
+        mock_entity_type = ACTOR_TYPE.DIRECT
+        inbox_queue = self.mock_queue(a, mock_entity_type)
+        source_ex = b.outbox
+
+        a._add_binding(source_ex.as_dict(), routing_key, mock_entity_type)
+
+        inbox_queue.bind_to.assert_called_with(
+            exchange=b.outbox, routing_key=routing_key)
+
+        a._remove_binding(source_ex.as_dict(), routing_key, mock_entity_type)
+
+        inbox_queue.unbind_from.assert_called_with(
+            exchange=source_ex, routing_key=routing_key)
+
+
+    @with_in_memory_connection
+    def test_add_remove_binding_when_actor_type_scatter(self, conn):
+        a, b = A(conn), A(conn)
+        routing_key, mock_entity_type = 'foooo', ACTOR_TYPE.SCATTER
+
+        dest_ex = self.mock_exchange(a, mock_entity_type)
+        source_ex = b.outbox
+
+        a._add_binding(source_ex.as_dict(),
+                       routing_key=routing_key,
+                       inbox_type=mock_entity_type)
+
+        dest_ex.bind_to.assert_called_with(exchange=source_ex,
+                                           routing_key=routing_key)
+
+        a._remove_binding(source_ex.as_dict(), routing_key, mock_entity_type)
+
+        dest_ex.exchange_unbind.assert_called_with(
+            exchange=source_ex, routing_key=routing_key)
+
+    @with_in_memory_connection
+    def test_add_remove_binding_when_actor_type_rr(self, conn):
+        a, b = A(conn), A(conn)
+        routing_key, mock_entity_type = 'foooo', ACTOR_TYPE.RR
+        dest_exchange = self.mock_exchange(a, mock_entity_type)
+        source_ex = b.outbox
+
+        a._add_binding(source_ex.as_dict(), routing_key, mock_entity_type)
+
+        dest_exchange.bind_to.assert_called_with(exchange=source_ex,
+                                               routing_key=routing_key)
+
+        a._remove_binding(source_ex.as_dict(), routing_key, mock_entity_type)
+
+        dest_exchange.exchange_unbind.assert_called_with(
+            exchange=source_ex, routing_key=routing_key)
+
+
+    @with_in_memory_connection
+    def test_add_binding_when_actor_type_not_supported(self, conn):
+        a, b = A(conn), A(conn)
+        entity_type = 'test'
+
+        self.assertNotIn(entity_type, a.types)
+        with self.assertRaises(Exception):
+            a._add_binding(b.outbox.as_dict(),
+                           routing_key=b.routing_key, inbox_type=entity_type)
+
+    @with_in_memory_connection
+    def test_add_remove_binding_when_routing_key_empty(self, conn):
+        a, b = A(conn), A(conn)
+        routing_key, mock_entity_type = "", ACTOR_TYPE.SCATTER
+        source_ex = Exchange('bar.foo.bar', mock_entity_type)
+
+        exchange = self.mock_exchange(a, mock_entity_type)
+
+        a._add_binding(source_ex.as_dict(),routing_key, mock_entity_type)
+
+        exchange.bind_to.assert_called_with(exchange=source_ex,
+                                            routing_key=routing_key)
+
+        a._remove_binding(source_ex.as_dict(), routing_key, mock_entity_type)
+
+        exchange.exchange_unbind.assert_called_with(exchange=source_ex,
+                                                    routing_key=routing_key)
+
+
