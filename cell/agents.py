@@ -72,7 +72,7 @@ class dAgent(Actor):
         name = qualname(actor)
         actor_id = uuid()
         res = self.call('add_actor', {'name': name, 'id': actor_id},
-                        type='round-robin', nowait=True)
+                        type='round-robin', nowait=nowait)
         return ActorProxy(actor, actor_id, res)
 
     def stop_actor_by_id(self, actor_id, nowait=False):
