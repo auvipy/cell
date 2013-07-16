@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from kombu.connection import Connection
 
 try:
     import unittest
@@ -181,6 +182,14 @@ class Case(unittest.TestCase):
             standardMsg = '\n'.join(errors)
             self.fail(self._formatMessage(msg, standardMsg))
 
+def with_in_memory_connection(fn):
+        from functools import wraps
+
+        @wraps(fn)
+        def wrapper(self, *args, **kwargs):
+                with Connection('memory://') as conn:
+                    fn(self, conn, *args, **kwargs)
+        return wrapper
 
 def with_environ(env_name, env_value):
 
