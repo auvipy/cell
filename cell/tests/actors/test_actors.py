@@ -6,7 +6,7 @@ from kombu.common import uuid, maybe_declare
 from mock import patch, ANY
 from cell.actors import Actor
 from cell.results import AsyncResult
-from cell.tests.utils import Case, Mock
+from cell.tests.utils import Case, Mock, with_in_memory_connection
 from cell.actors import ACTOR_TYPE
 from kombu.compression import compress
 from kombu.entity import Exchange
@@ -73,16 +73,6 @@ def get_encoded_test_message(method='foo', args={'bar': 'foo_arg'},
         delivery_tag = delivery_tag or uuid()
         data['properties']['delivery_tag'] = delivery_tag
         return body, ch.message_to_python(data)
-
-
-def with_in_memory_connection(fn):
-        from functools import wraps
-
-        @wraps(fn)
-        def wrapper(self, *args, **kw):
-                with Connection('memory://') as conn:
-                    fn(self, conn, *args, **kw)
-        return wrapper
 
 
 class test_Actor(Case):
@@ -258,6 +248,7 @@ class test_Actor(Case):
         return_val, timeout, default_timeout = 'res', 1, 2
 
         a = A()
+        a.default_timeout = default_timeout
         a.call_or_cast = Mock(return_value=Mock())
         a.call_or_cast.return_value.gather = Mock(return_value=return_val)
 
