@@ -24,10 +24,9 @@ class dAgent(Actor):
     class state(object):
 
         def _start_actor_consumer(self, actor):
-            print 'Starting a dAgent !!!'
             actor.consumer = actor.Consumer(self.connection.channel())
             actor.consumer.consume()
-            self.agent.actors[actor.id] = actor
+            self.agent.registry[actor.id] = actor
             actor.on_agent_ready()
 
         def add_actor(self, name, id=None):
@@ -36,7 +35,7 @@ class dAgent(Actor):
                 actor = symbol_by_name(name)(
                     connection=self.connection, id=id)
 
-                if actor.id in self.agent.actors:
+                if actor.id in self.agent.registry:
                     warn('Actor id %r already exists', actor.id)
                 self._start_actor_consumer(actor)
                 debug('Actor registered: %s', name)
@@ -49,7 +48,7 @@ class dAgent(Actor):
 
         def reset(self):
             debug('Resetting active actors')
-            for actor in self.agent.actors.itervalues():
+            for actor in self.agent.registry.itervalues():
                 if actor.consumer:
                     ignore_errors(self.connection, actor.consumer.cancel)
                 actor.connection = self.connection
@@ -57,22 +56,22 @@ class dAgent(Actor):
 
         def stop_actor(self, id):
             try:
-                actor = self.agent.actors.pop(id)
+                actor = self.agent.registry.pop(id)
             except KeyError:
-                pass
+                warn('Actor id %r not in the registry', id)
             else:
                 if actor.consumer and actor.consumer.channel:
                     ignore_errors(self.connection, actor.consumer.cancel)
 
     def __init__(self, connection, id=None):
-        self.actors = {}
+        self.registry = {}
         Actor.__init__(self, connection=connection, id=id, agent=self)
 
     def add_actor(self, actor, nowait=False):
         name = qualname(actor)
         actor_id = uuid()
         res = self.call('add_actor', {'name': name, 'id': actor_id},
-                        type='round-robin', nowait=nowait)
+                        type=ACTOR_TYPE.RR, nowait=nowait)
         return ActorProxy(actor, actor_id, res)
 
     def stop_actor_by_id(self, actor_id, nowait=False):
