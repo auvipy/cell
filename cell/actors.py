@@ -132,6 +132,7 @@ class Actor(object):
                     ACTOR_TYPE.SCATTER: '__scatter__'}
 
     meta = {}
+    consumer = None
 
     class state(object):
         pass
@@ -310,7 +311,7 @@ class Actor(object):
         will block and return the replies.
 
         """
-        kwargs.setdefault('timeout', 2)
+        kwargs.setdefault('timeout', self.default_timeout)
         r = self.call_or_cast(method, args, type=ACTOR_TYPE.SCATTER,
                               nowait=nowait, **kwargs)
         if not nowait:
