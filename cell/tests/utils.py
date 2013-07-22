@@ -14,7 +14,7 @@ import os
 import platform
 import re
 import sys
-import warnings
+import warnings 
 try:
     import __builtin__ as builtins
 except ImportError:  # py3k
@@ -182,14 +182,15 @@ class Case(unittest.TestCase):
             standardMsg = '\n'.join(errors)
             self.fail(self._formatMessage(msg, standardMsg))
 
+
 def with_in_memory_connection(fn):
-        from functools import wraps
 
         @wraps(fn)
         def wrapper(self, *args, **kwargs):
                 with Connection('memory://') as conn:
                     fn(self, conn, *args, **kwargs)
         return wrapper
+
 
 def with_environ(env_name, env_value):
 
