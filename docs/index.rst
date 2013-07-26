@@ -8,6 +8,9 @@ Contents:
     :maxdepth: 2
 
     introduction
+    getting-started/index
+    user-guide/index
+
 
 .. toctree::
     :maxdepth: 1
