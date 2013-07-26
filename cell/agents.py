@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 
 from inspect import isclass
+import weakref
 
 from kombu.common import uuid, ignore_errors
 from kombu.log import get_logger, setup_logging
@@ -27,6 +28,7 @@ class dAgent(Actor):
             actor.consumer = actor.Consumer(self.connection.channel())
             actor.consumer.consume()
             self.agent.registry[actor.id] = actor
+            actor.agent = weakref.proxy(self.agent)
             actor.on_agent_ready()
 
         def add_actor(self, name, id=None):
@@ -104,6 +106,12 @@ class dAgent(Actor):
         finally:
             if clear:
                 self.registry.clear()
+
+    def process_message(self, actor, body, message):
+        if actor is not self and self.pool is not None and self.pool.is_green:
+            self.pool.spawn_n(actor._on_message, body, message)
+        else:
+            actor._on_message(body, message)
 
     def get_default_scatter_limit(self, actor):
         return None

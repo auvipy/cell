@@ -423,7 +423,7 @@ class Actor(object):
         props.setdefault('routing_key', self.routing_key)
         props.setdefault('serializer', self.serializer)
         exchange = exchange or self.type_to_exchange[type]()
-        print 'exchange we are sending to is:', exchange.name
+        #debug('exchange we are sending to is:', exchange.name)
         props = dict(props, exchange=exchange, before=before)
 
         ipublish(producers[self._connection], self._publish,
@@ -431,7 +431,7 @@ class Actor(object):
                  **(retry_policy or {}))
 
     def call(self, method, args={}, retry=False, retry_policy=None, **props):
-        """Send message to actor and return :class:`AsyncResult`."""
+        """Send message to the same actor and return :class:`AsyncResult`."""
         ticket = uuid()
         reply_q = self.get_reply_queue(ticket)
 
@@ -461,6 +461,9 @@ class Actor(object):
                            self.reply_exchange, req, body, props)
 
     def on_message(self, body, message):
+        self.agent.process_message(self, body, message)
+
+    def _on_message(self, body, message):
         """What to do when a message is received.
 
         This is a kombu consumer callback taking the standard
@@ -489,7 +492,6 @@ class Actor(object):
                 raise
             else:
                 message.ack()
-
         handle()
 
     def _collect_replies(self, conn, channel, ticket, *args, **kwargs):
