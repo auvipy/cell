@@ -1,12 +1,12 @@
 from cell import Agent
-from cell.actors import Server
+from cell.actors import Actor
 
 from kombu import Connection
 
 connection = Connection()
 
 
-class GreetingActor(Server):
+class GreetingActor(Actor):
     default_routing_key = 'GreetingActor'
 
     class state:

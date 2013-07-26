@@ -140,10 +140,10 @@ def join(outboxes, inbox):
 
 
 def forward(source_actor, dest_actor):
-    dest_actor.wait_to_start()
+    #dest_actor.wait_to_start()
     dest_actor.add_binding(source_actor.outbox,
                            routing_key=source_actor.routing_key,
-                           inbox_type='direct')
+                           inbox_type='scatter')
 
 
 def stop_forward(source_actor, dest_actor):
