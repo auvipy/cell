@@ -31,11 +31,11 @@ class dAgent(Actor):
             actor.agent = weakref.proxy(self.agent)
             actor.on_agent_ready()
 
-        def add_actor(self, name, id=None):
+        def spawn(self, name, id, kwargs):
             """Add actor to the registry and start the actor's main method."""
             try:
                 actor = symbol_by_name(name)(
-                    connection=self.connection, id=id)
+                    connection=self.connection, id=id, **kwargs)
 
                 if actor.id in self.agent.registry:
                     warn('Actor id %r already exists', actor.id)
@@ -69,12 +69,13 @@ class dAgent(Actor):
         self.registry = {}
         Actor.__init__(self, connection=connection, id=id, agent=self)
 
-    def add_actor(self, actor, nowait=False):
-        name = qualname(actor)
+    def spawn(self, actor_class, nowait=False, **kwargs):
         actor_id = uuid()
-        res = self.call('add_actor', {'name': name, 'id': actor_id},
+        name = qualname(actor_class)
+        res = self.call('spawn', {'name': name, 'id': actor_id,
+                                  'kwargs': kwargs},
                         type=ACTOR_TYPE.RR, nowait=nowait)
-        return ActorProxy(actor, actor_id, res)
+        return ActorProxy(name, actor_id, res, connection=self.connection, **kwargs)
 
     def stop_actor_by_id(self, actor_id, nowait=False):
         return self.scatter('stop_actor', {'actor_id': actor_id},
@@ -87,6 +88,7 @@ class dAgent(Actor):
         self.state.reset()
 
     def stop(self):
+
         debug('Stopping agent %s', self.id)
         self._shutdown(clear=False)
 

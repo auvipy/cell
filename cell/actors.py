@@ -13,7 +13,7 @@ from kombu.common import (collect_replies, ipublish, isend_reply,
                           maybe_declare, uuid)
 from kombu.log import Log
 from kombu.pools import producers
-from kombu.utils import kwdict, reprcall, reprkwargs
+from kombu.utils import kwdict, reprcall, reprkwargs, symbol_by_name
 from kombu.utils.encoding import safe_repr
 
 from . import __version__
@@ -638,9 +638,10 @@ class Actor(object):
 class ActorProxy(object):
     """A class that represents an actor started remotely."""
 
-    def __init__(self, local_actor, actor_id, async_start_result):
-        self.__subject = local_actor.__copy__()
-        self.__subject.id = actor_id
+    def __init__(self, name, id, async_start_result, **kwargs):
+        kwargs.update({'id':id})
+        self.__subject = symbol_by_name(name)(**kwargs)
+        self.__subject.id = id
         self.async_start_result = async_start_result
 
     def __getattr__(self, name):

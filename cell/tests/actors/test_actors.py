@@ -560,7 +560,7 @@ class test_Actor(Case):
         a.reply = Mock()
 
         # when the property reply_to is set, reply is called
-        a.on_message(body, message)
+        a._on_message(body, message)
 
         self.assertTrue(a.state.foo_called)
         a.reply.assert_called_oncce()
@@ -583,7 +583,7 @@ class test_Actor(Case):
         a = Foo()
         a.reply = Mock()
 
-        result = a.on_message(body, message)
+        result = a._on_message(body, message)
 
         self.assertTrue(a.state.foo_called)
         self.assertEquals(a.reply.call_count, 0)
@@ -602,7 +602,7 @@ class test_Actor(Case):
 
         # when reply_to is not set:
         # dispatch result should be ignored
-        result = a.on_message(body, message)
+        result = a._on_message(body, message)
 
         a._DISPATCH.assert_called_once_wiith(message, body)
         self.assertIsNone(result)
@@ -620,7 +620,7 @@ class test_Actor(Case):
 
         # when reply_to is set:
         # dispatch result should be ignored
-        a.on_message(body, message)
+        a._on_message(body, message)
 
         a._DISPATCH.assert_called_once_with(body, ticket=ticket)
         a.reply.assert_called_once_with(message, ret_val)
@@ -640,7 +640,7 @@ class test_Actor(Case):
         a = Foo()
         a.default_receive = Mock()
 
-        result = a.on_message(body, message)
+        result = a._on_message(body, message)
 
         a.default_receive.assert_called_once(args)
         # message should be acknowledged even when the method does not exist
@@ -655,7 +655,7 @@ class test_Actor(Case):
         a = A()
         a.state._foo = Mock()
 
-        a.on_message(body, message)
+        a._on_message(body, message)
 
         self.assertEqual(a.state._foo.call_count, 0)
         # message should be acknowledged even when method is not invoked
@@ -670,7 +670,7 @@ class test_Actor(Case):
         a = A()
         a.default_receive = Mock()
 
-        result = a.on_message(body, message)
+        result = a._on_message(body, message)
 
         # message should be acknowledged even when the method does not exist
         message.ack.assert_called_once_with()
@@ -685,7 +685,7 @@ class test_Actor(Case):
         a.handle_cast = Mock(side_effect=exception_cls('Boom'))
 
         with self.assertRaises(exception_cls):
-            a.on_message(body, message)
+            a._on_message(body, message)
             self.assertEquals(message.ack.call_count, ack_count)
 
         a.handle_cast.reset_mock()
@@ -698,7 +698,7 @@ class test_Actor(Case):
                                          reply_to=[uuid])
 
         with self.assertRaises(exception_cls):
-            a.on_message(body, message)
+            a._on_message(body, message)
             self.assertEquals(message.ack.call_count, ack_count)
 
     def test_on_message_when_base_exception_occurs(self):
@@ -812,7 +812,7 @@ class test_Actor(Case):
         reply_q = a.get_reply_queue(ticket)
         reply_q(a.connection.default_channel).declare()
 
-        a.on_message(body, message)
+        a._on_message(body, message)
 
         a_con = Consumer(conn.channel(), reply_q)
         self.assertNextMsgDataEqual(a_con, {'ok': ret_result})
