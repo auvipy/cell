@@ -1,21 +1,11 @@
 import celery
 from cell.actors import Actor
 from cell.agents import dAgent
-from cell.results import AsyncResult
 from kombu.utils import uuid
 from examples.workflow import forward
 
-"""
-actors_mng = dAgent(connection=my_app.broker_connection())
-    Simple Adder app
-Steps:
-1. Start celery worker
-2.
-"""
-
-
 my_app = celery.Celery(broker='pyamqp://guest@localhost//')
-
+agent = dAgent(connection=my_app.broker_connection())
 
 class Adder(Actor):
     def __init__(self, connection=None, *args, **kwargs):
@@ -63,8 +53,6 @@ class Bookkeeper(Actor):
     def on_agent_ready(self):
         self.state.on_agent_ready()
 
-actors_mng = dAgent(connection=my_app.broker_connection())
-
 
 class gBookkeeper(Actor):
     def __init__(self, connection=None, *args, **kwargs):
@@ -91,7 +79,6 @@ class gBookkeeper(Actor):
 
 if __name__ == '__main__':
     import examples.adder
-    b = examples.adder.Bookkeeper()
-    rb = actors_mng.add_actor(b)
+    rb = agent.spawn(examples.adder.Bookkeeper.__class__)
     rb.call('configure_adder')
     rb.call('count_to', {'target': 10})

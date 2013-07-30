@@ -14,7 +14,7 @@ import os
 import platform
 import re
 import sys
-import warnings 
+import warnings
 try:
     import __builtin__ as builtins
 except ImportError:  # py3k

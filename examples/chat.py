@@ -3,7 +3,7 @@ from cell.actors import Actor
 from cell.agents import dAgent
 
 my_app = celery.Celery(broker='pyamqp://guest@localhost//')
-actors_mng = dAgent(connection=my_app.broker_connection())
+agent = dAgent(connection=my_app.broker_connection())
 
 
 class User(Actor):
@@ -16,6 +16,9 @@ class User(Actor):
         def post(self, msg):
             print msg
 
+        def connect(self):
+            return agent.spawn(self.__class__)
+
     def connect(self, nickname):
         self.call('connect', {'name': nickname})
 
@@ -27,9 +30,6 @@ class User(Actor):
         a = User(id=actor, connection=self.connection)
         msg = 'Actor %s is sending you a message: %s' % (self.id, msg)
         a.call('post', {'msg': msg})
-
-    def connect(self):
-        return actors_mng.add_actor(self)
 
 if __name__ == '__main__':
     import examples.chat

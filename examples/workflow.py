@@ -37,7 +37,6 @@ class WorkflowActor(Actor):
 
 
 class TrueFilter(WorkflowActor):
-    #default_routing_key = 'filter'
 
     class state(WorkflowActor.state):
         def filter(self,  msg):
@@ -46,7 +45,6 @@ class TrueFilter(WorkflowActor):
 
 
 class FalseFilter(WorkflowActor):
-    #default_routing_key = 'filter'
 
     class state(WorkflowActor.state):
         def filter(self,  msg):
@@ -55,7 +53,6 @@ class FalseFilter(WorkflowActor):
 
 
 class Joiner(WorkflowActor):
-    #default_routing_key = 'collector'
     def __init__(self, connection=None, *args, **kwargs):
         super(Joiner, self).__init__(
             connection or my_app.broker_connection(), *args, **kwargs)
@@ -80,7 +77,6 @@ class Joiner(WorkflowActor):
 
 
 class GuardedActor(WorkflowActor):
-    #default_routing_key = 'waiter'
     def __init__(self, connection=None, *args, **kwargs):
         self.ready = False
         super(GuardedActor, self).__init__(
@@ -96,7 +92,6 @@ class GuardedActor(WorkflowActor):
 
 
 class Printer(GuardedActor):
-    #default_routing_key = 'printer'
     types = ('scatter', 'round-robin', 'direct')
 
     class state(GuardedActor.state):
@@ -105,7 +100,7 @@ class Printer(GuardedActor):
 
 
 class Logger(GuardedActor):
-    #default_routing_key = 'logger'
+
     def default_receive(self, msg):
         print msg
 
@@ -124,7 +119,7 @@ class Workflow(object):
 
     def start(self):
         for actor in self.actors:
-            yield self.actors_mng.add_actor(actor)
+            yield self.actors_mng.spawn(actor)
 
 
 def join(outboxes, inbox):
@@ -140,7 +135,6 @@ def join(outboxes, inbox):
 
 
 def forward(source_actor, dest_actor):
-    #dest_actor.wait_to_start()
     dest_actor.add_binding(source_actor.outbox,
                            routing_key=source_actor.routing_key,
                            inbox_type='scatter')
@@ -198,26 +192,23 @@ printer_name = 'examples.workflow.Printer'
                               app = my_app)
 """
 
-actors_mng = dAgent(connection=my_app.broker_connection())
+agent = dAgent(connection=my_app.broker_connection())
 
 if __name__ == '__main__':
-        #FilterExample().start()
         printer = Printer()
-        actors_mng.add_actor(printer)
+        agent.spawn(printer)
 
 """Example usage:
 >>from examples.workflow import Printer, Logger, actors_mng
->>pr = Printer()
 Start 2 actors of type Printer remotely
->>rpr1 = actors_mng.add_actor(pr)
->>rpr2 = actors_mng.add_actor(pr)
+>>rpr1 = agent.spawn(Printer)
+>>rpr2 = agent.spawn(Printer)
 Use remote actor
 >>rpr.call('do_smth')
 >>rpr.scatter('do_smth')
 >>rpr.throw('do_smth')
 Start another actor
->>log = Logger
->>rlog = actors_mng.add_actor(log)
+>>rlog = agent.spawn(Log)
 Bind two actors together
 >>from examples.workflow import forward, stop_forward
 >>rlog |forward| rpr1
@@ -226,7 +217,7 @@ Send to the output of ane actor and checks the binded actor receives is
 Unbind actors
 >>rlog |stop_forward| rpr1
 Stop actors
->>actors_mng.stop_actor_by_id(rlog.id)
->>actors_mng.stop_actor_by_id(rpr1.id)
->>actors_mng.stop_actor_by_id(rpr2.id)
+>>agent.stop_actor_by_id(rlog.id)
+>>agent.stop_actor_by_id(rpr1.id)
+>>agent.stop_actor_by_id(rpr2.id)
 """

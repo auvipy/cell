@@ -639,7 +639,7 @@ class ActorProxy(object):
     """A class that represents an actor started remotely."""
 
     def __init__(self, name, id, async_start_result, **kwargs):
-        kwargs.update({'id':id})
+        kwargs.update({'id': id})
         self.__subject = symbol_by_name(name)(**kwargs)
         self.__subject.id = id
         self.async_start_result = async_start_result

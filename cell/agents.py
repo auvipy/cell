@@ -75,7 +75,8 @@ class dAgent(Actor):
         res = self.call('spawn', {'name': name, 'id': actor_id,
                                   'kwargs': kwargs},
                         type=ACTOR_TYPE.RR, nowait=nowait)
-        return ActorProxy(name, actor_id, res, connection=self.connection, **kwargs)
+        return ActorProxy(name, actor_id, res,
+                          connection=self.connection, **kwargs)
 
     def stop_actor_by_id(self, actor_id, nowait=False):
         return self.scatter('stop_actor', {'actor_id': actor_id},
