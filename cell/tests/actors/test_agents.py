@@ -35,11 +35,12 @@ class test_dAgent(Case):
         ag, a = dA(conn), A()
         ag.cast = Mock()
 
-        proxy = ag.spawn(qualname(a))
+        proxy = ag.spawn(A)
 
         ag.cast.assert_called_once_with(
             'spawn',
-            {'name': qualname(a), 'id': actor_static_id.return_value},
+            {'name': qualname(a), 'id': actor_static_id.return_value,
+             'kwargs': {}},
             ANY, reply_to=ticket_static_id.return_value,
             type=ACTOR_TYPE.RR, nowait=False)
 
