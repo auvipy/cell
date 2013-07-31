@@ -15,8 +15,7 @@ Adder
 
     if __name__=='__main__':
         import examples.adder
-        adder = examples.adder.Adder(connection)
-        agent.add_actor(adder)
+        adder = agent.spawn(Adder)
 
         adder.call('add-one', {'i':10})
 
@@ -36,9 +35,6 @@ Chat-users
             def post(self, msg):
                 print msg
 
-        def connect(self, nickname):
-            self.call('connect', {'name': nickname})
-
         def post(self, msg):
             msg = 'Posting on the wall: %s' % msg
             self.scatter('post', {'msg': msg})
@@ -48,11 +44,10 @@ Chat-users
             msg = 'Actor %s is sending you a message: %s' %(self.id, msg)
             a.call('post', {'msg':msg})
 
-
         def connect(self):
             if not agent:
                 agent = dAgent(self.connection)
-            return self.agent.add_actor(self)
+            return self.agent.spawn(self)
 
     if __name__=='__main__':
         import examples.chat
@@ -66,3 +61,4 @@ Chat-users
 
 Map-reduce
 ==========
+

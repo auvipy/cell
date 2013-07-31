@@ -1,4 +1,4 @@
-
+.. _getting-started:
 
 Getting started examples
 ==================
