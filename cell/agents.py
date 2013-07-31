@@ -31,7 +31,7 @@ class dAgent(Actor):
             actor.agent = weakref.proxy(self.agent)
             actor.on_agent_ready()
 
-        def spawn(self, name, id, kwargs):
+        def spawn(self, name, id, kwargs={}):
             """Add actor to the registry and start the actor's main method."""
             try:
                 actor = symbol_by_name(name)(
