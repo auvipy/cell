@@ -120,7 +120,7 @@ class Actor(object):
                     'interval_step': 0.2}
 
     #: returns the next anonymous ticket number
-    #: used for identifying related logs.
+    #: used fo+r identifying related logs.
     next_anon_ticket = count(1).next
 
     #: Additional fields added to reply messages by default.
@@ -497,7 +497,7 @@ class Actor(object):
     def _collect_replies(self, conn, channel, ticket, *args, **kwargs):
         kwargs.setdefault('timeout', self.default_timeout)
         if 'limit' not in kwargs:
-            kwargs['limit'] = self.get_default_scatter_limit()
+            kwargs['limit'] = 1#self.get_default_scatter_limit()
         return collect_replies(conn, channel, self.get_reply_queue(ticket),
                                *args, **kwargs)
 

@@ -49,18 +49,18 @@ class test_dAgent(Case):
                          ticket_static_id.return_value)
 
         # Agent state is not affected by the remote spawn call
-        self.assertDictEqual(ag.registry, {})
+        self.assertDictEqual(ag.state.registry, {})
 
     @with_in_memory_connection
     @patch('cell.agents.uuid', return_value=uuid())
-    def test_stop_actor_by_id(self, conn, static_id):
+    def test_kill_actor_by_id(self, conn, static_id):
         ag = dA(conn)
         ag.cast = Mock()
 
-        ag.stop_actor_by_id(static_id)
+        ag.kill(static_id)
 
         ag.cast.assert_called_once_with(
-            'stop_actor', {'actor_id': static_id},
+            'kill', {'actor_id': static_id},
             ANY, reply_to=ANY, type=ACTOR_TYPE.SCATTER,
             timeout=ag.default_timeout)
 
@@ -69,11 +69,11 @@ class test_dAgent(Case):
     def test_state_spawn(self, conn, consumer):
         ag, a, id = dA(conn), A(), uuid()
 
-        self.assertEquals(ag.registry, {})
+        self.assertEquals(ag.state.registry, {})
         ag.state.spawn(qualname(a), id)
 
-        self.assertEquals(len(ag.registry), 1)
-        actor = ag.registry[id]
+        self.assertEquals(len(ag.state.registry), 1)
+        actor = ag.state.registry[id]
         self.assertIs(type(actor), A)
         self.assertIsNotNone(actor.consumer)
         actor.consumer.consume.assert_called_once_with()
@@ -83,12 +83,12 @@ class test_dAgent(Case):
     def test_state_stop_actor_by_id(self, conn, consumer):
         ag, a, id = dA(conn), A(), uuid()
         ag.state.spawn(qualname(a), id)
-        self.assertEquals(len(ag.registry), 1)
-        actor = ag.registry[id]
+        self.assertEquals(len(ag.state.registry), 1)
+        actor = ag.state.registry[id]
 
-        ag.state.stop_actor(id)
+        ag.state.kill(id)
 
-        self.assertEquals(ag.registry, {})
+        self.assertEquals(ag.state.registry, {})
         actor.consumer.cancel.assert_called_once_with()
 
     @with_in_memory_connection
@@ -97,12 +97,12 @@ class test_dAgent(Case):
         id1, id2 = uuid(), uuid()
         ag.state.spawn(qualname(a), id1)
         ag.state.spawn(qualname(a), id2)
-        self.assertEquals(len(ag.registry), 2)
-        actor1, actor2 = ag.registry[id1], ag.registry[id2]
+        self.assertEquals(len(ag.state.registry), 2)
+        actor1, actor2 = ag.state.registry[id1], ag.state.registry[id2]
 
         ag.state.stop_all()
 
-        self.assertEquals(ag.registry, {})
+        self.assertEquals(ag.state.registry, {})
         self.assertEquals(actor1.consumer.channel.queues, {})
         self.assertEquals(actor2.consumer.channel.queues, {})
 
@@ -111,44 +111,44 @@ class test_dAgent(Case):
         ag, a, id1, id2 = dA(conn), A(), uuid(), uuid()
         ag.state.spawn(qualname(a), id1)
         ag.state.spawn(qualname(a), id2)
-        self.assertEquals(len(ag.registry), 2)
-        actor1, actor2 = ag.registry[id1], ag.registry[id2]
+        self.assertEquals(len(ag.state.registry), 2)
+        actor1, actor2 = ag.state.registry[id1], ag.state.registry[id2]
 
         ag.stop()
 
-        self.assertEquals(len(ag.registry), 2)
+        self.assertEquals(len(ag.state.registry), 2)
         self.assertEquals(actor1.consumer.channel.queues, {})
         self.assertEquals(actor2.consumer.channel.queues, {})
 
     @with_in_memory_connection
     def test_start_when_actors_are_already_in_the_registry(self, conn):
         ag, a1, a2 = dA(conn), A(conn), A(conn)
-        ag.registry.update({a1.id: a1, a2.id: a2})
+        ag.state.registry.update({a1.id: a1, a2.id: a2})
 
         ag.start()
 
         self.assertIsNotNone(a1.consumer)
         self.assertIsNotNone(a2.consumer)
-        self.assertEqual(len(ag.registry), 2)
+        self.assertEqual(len(ag.state.registry), 2)
 
     @with_in_memory_connection
     @patch('cell.actors.Actor.Consumer', return_value=Mock())
     def test_reset(self, conn, consumer):
         ag, a1 = dA(conn), A()
         ag.state.spawn(qualname(a1), a1.id)
-        a1 = ag.registry[a1.id]
+        a1 = ag.state.registry[a1.id]
 
         ag.state.reset()
 
         self.assertIsNotNone(a1.consumer)
-        self.assertEqual(len(ag.registry), 1)
+        self.assertEqual(len(ag.state.registry), 1)
         self.assertEqual(a1.consumer.cancel.call_count, 1)
 
     @with_in_memory_connection
     @patch('cell.agents.warn', return_value=Mock())
     def test_spawn_when_id_in_registry(self, conn, warn):
         ag, a1 = dA(conn), A(conn)
-        ag.registry[a1.id] = a1
+        ag.state.registry[a1.id] = a1
 
         ag.state.spawn(qualname(a1), a1.id)
 
@@ -158,8 +158,8 @@ class test_dAgent(Case):
     @patch('cell.agents.warn', return_value=Mock())
     def test_stop_actor_when_id_not_in_registry(self, conn, warn):
         ag, a1 = dA(conn), A(conn)
-        self.assertEqual(ag.registry, {})
+        self.assertEqual(ag.state.registry, {})
 
-        ag.state.stop_actor(a1.id)
+        ag.state.kill(a1.id)
 
         warn.assert_called_once_with(ANY, a1.id)
