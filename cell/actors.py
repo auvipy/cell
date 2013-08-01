@@ -317,10 +317,6 @@ class Actor(object):
         if not nowait:
             return r.gather(**kwargs)
 
-    def get_default_scatter_limit(self):
-        if self.agent:
-            return self.agent.get_default_scatter_limit(self.name)
-        return None
 
     def call_or_cast(self, method, args={}, nowait=False, **kwargs):
         """Apply remote `method` asynchronously or synchronously depending
@@ -496,8 +492,8 @@ class Actor(object):
 
     def _collect_replies(self, conn, channel, ticket, *args, **kwargs):
         kwargs.setdefault('timeout', self.default_timeout)
-        if 'limit' not in kwargs:
-            kwargs['limit'] = 1#self.get_default_scatter_limit()
+        if 'limit' not in kwargs and self.agent:
+            kwargs['limit'] = self.agent.get_default_scatter_limit()
         return collect_replies(conn, channel, self.get_reply_queue(ticket),
                                *args, **kwargs)
 
