@@ -69,11 +69,8 @@ class dAgent(Actor):
         def kill(self, actor_id):
             if actor_id not in self.registry:
                 raise Actor.Next()
-            try:
-                actor = self.registry.pop(actor_id)
-            except KeyError:
-                warn('Actor id %r not in the registry', actor_id)
             else:
+                actor = self.registry.pop(actor_id)
                 if actor.consumer and actor.consumer.channel:
                     ignore_errors(self.connection, actor.consumer.cancel)
 

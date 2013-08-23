@@ -155,11 +155,10 @@ class test_dAgent(Case):
         warn.assert_called_once_with(ANY, a1.id)
 
     @with_in_memory_connection
-    @patch('cell.agents.warn', return_value=Mock())
-    def test_stop_actor_when_id_not_in_registry(self, conn, warn):
+    def test_stop_actor_when_id_not_in_registry(self, conn):
         ag, a1 = dA(conn), A(conn)
         self.assertEqual(ag.state.registry, {})
 
-        ag.state.kill(a1.id)
+        with self.assertRaises(Actor.Next):
+            ag.state.kill(a1.id)
 
-        warn.assert_called_once_with(ANY, a1.id)

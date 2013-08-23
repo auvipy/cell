@@ -235,7 +235,6 @@ Receiving messages
 ~~~~~~~~~~~~~~~~~~
 An actor message has a name (label) and arguments.
 Each message name should have a corresponding method in the Actor's internal state class.
-
 Otherwise, an error code is returned as a result of the message call.
 However, if fire and forget called is used (call with nowait argument set to True),
 no error code will be returned. You can find the error expecting the worker log or the the worker console.
@@ -248,7 +247,7 @@ Select an existing actor
 If you know that an actor of the type you need is already spawned,
 but you don't know its id, you can get a proxy for it as follows:
 
-.. code-block::python
+.. code-block:: python
 
         from examples.logger import Logger
         try:
@@ -256,6 +255,7 @@ but you don't know its id, you can get a proxy for it as follows:
         except KeyError:
             logger = agent.spawn(Logger)
 
-In the above example we check if an actor s already spawned in any of the workers.
-If no Logger is found in any of the workers, the :py:meth:`agents.Agent.select` will throw an exception.
+In the above example we check if an actor is already spawned in any of the workers.
+If Logger is found in any of the workers, the :py:meth:`agents.Agent.select` will throw
+an exception of type :py:class:`KeyError`.
 
