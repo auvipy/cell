@@ -7,6 +7,7 @@ from examples.workflow import forward
 my_app = celery.Celery(broker='pyamqp://guest@localhost//')
 agent = dAgent(connection=my_app.broker_connection())
 
+
 class Adder(Actor):
     def __init__(self, connection=None, *args, **kwargs):
         super(Adder, self).__init__(
@@ -20,9 +21,9 @@ class Adder(Actor):
             return res
 
 
-class Bookkeeper(Actor):
+class Counter(Actor):
     def __init__(self, connection=None, *args, **kwargs):
-        super(Bookkeeper, self).__init__(
+        super(Counter, self).__init__(
             connection or my_app.broker_connection(), *args, **kwargs)
 
     class state():
@@ -48,15 +49,16 @@ class Bookkeeper(Actor):
             init = 0
             self.targets[token] = (target, init)
             self.adder.throw('add_one', {'i': init, 'token': token},
-                             nowait=True)
+                             nowait=True, callback='count',
+                             ckwargs={'token': token})
 
     def on_agent_ready(self):
         self.state.on_agent_ready()
 
 
-class gBookkeeper(Actor):
+class gCounter(Actor):
     def __init__(self, connection=None, *args, **kwargs):
-        super(gBookkeeper, self).__init__(
+        super(gCounter, self).__init__(
             connection or my_app.broker_connection(), *args, **kwargs)
 
     class state():
@@ -79,6 +81,5 @@ class gBookkeeper(Actor):
 
 if __name__ == '__main__':
     import examples.adder
-    rb = agent.spawn(examples.adder.Bookkeeper.__class__)
-    rb.call('configure_adder')
+    rb = agent.spawn(examples.adder.Counter.__class__)
     rb.call('count_to', {'target': 10})
