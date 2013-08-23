@@ -19,6 +19,7 @@ logger = get_logger(__name__)
 debug, warn, error = logger.debug, logger.warn, logger.error
 from operator import itemgetter
 
+
 def first_reply(replies, key):
     try:
         return replies.next()
@@ -43,7 +44,6 @@ class dAgent(Actor):
         def spawn(self, name, id, kwargs={}):
             """Add actor to the registry and start the actor's main method."""
             try:
-                print 'name is',name
                 actor = symbol_by_name(name)(
                     connection=self.connection, id=id, **kwargs)
 
@@ -131,7 +131,8 @@ class dAgent(Actor):
         :keyword actor: the name of the :class:`Actor` class
         """
         name = qualname(actor)
-        id = first_reply(self.scatter('select', {'actor': name}, limit=1), actor)
+        id = first_reply(
+            self.scatter('select', {'actor': name}, limit=1), actor)
         return ActorProxy(name, id, None,
                           connection=self.connection, **kwargs)
 
@@ -177,8 +178,10 @@ class dAgent(Actor):
         if actor is not self and self.pool is not None and self.pool.is_green:
             self.pool.spawn_n(actor._on_message, body, message)
         else:
-             if message.properties.get('reply_to'):
-                 actor._on_message(body, message)
+            if message.properties.get('reply_to'):
+                warn('Starting a blocking call (%s) on actor (%s) when greenlets are disabled.',
+                     itemgetter('method')(body), actor.__class__)
+                actor._on_message(body, message)
 
     def is_green(self):
         return self.pool is not None and self.pool.is_green
