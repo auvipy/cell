@@ -17,6 +17,7 @@ __all__ = ['Agent', 'dAgent']
 
 logger = get_logger(__name__)
 debug, warn, error = logger.debug, logger.warn, logger.error
+from operator import itemgetter
 
 def first_reply(replies, key):
     try:
@@ -42,6 +43,7 @@ class dAgent(Actor):
         def spawn(self, name, id, kwargs={}):
             """Add actor to the registry and start the actor's main method."""
             try:
+                print 'name is',name
                 actor = symbol_by_name(name)(
                     connection=self.connection, id=id, **kwargs)
 
@@ -65,6 +67,8 @@ class dAgent(Actor):
                 self._start_actor_consumer(actor)
 
         def kill(self, actor_id):
+            if actor_id not in self.registry:
+                raise Actor.Next()
             try:
                 actor = self.registry.pop(actor_id)
             except KeyError:
@@ -75,11 +79,9 @@ class dAgent(Actor):
 
         def select(self, actor):
             for key, val in self.registry.iteritems():
-                print key
                 if qualname(val.__class__) == actor:
                     return key
             # delegate to next agent.
-            print 'In raise Actor.Next'
             raise Actor.Next()
 
         def _shutdown(self, cancel=True, close=True, clear=True):
@@ -87,7 +89,8 @@ class dAgent(Actor):
                 for actor in self.registry.itervalues():
                     if actor and actor.consumer:
                         if cancel:
-                            ignore_errors(self.connection, actor.consumer.cancel)
+                            ignore_errors(self.connection,
+                                          actor.consumer.cancel)
                         if close and actor.consumer.channel:
                             ignore_errors(self.connection,
                                           actor.consumer.channel.close)
@@ -95,23 +98,23 @@ class dAgent(Actor):
                 if clear:
                     self.registry.clear()
 
-
     def __init__(self, connection, id=None):
         self.registry = {}
         Actor.__init__(self, connection=connection, id=id, agent=self)
 
     def spawn(self, actor_class, kwargs={}, nowait=False):
-        """Spawn a new actor on a celery worker by sending a remote command to the worker.
+        """Spawn a new actor on a celery worker by sending
+        a remote command to the worker.
 
-        :keyword actor_class: the name of the :class:`Actor` class or its derivative,
+        :keyword actor_class: the name of the class :class:`~.cell.actors.Actor` or its derivative
 
         :keyword kwargs: The keyword arguments to pass on to the
                          actor __init__ (a :class:`dict`)
 
-        :keyword nowait: If set to True (default) the call waits for the result
-                        of spawning the actor. if False, the spawning is asynchronous.
+        :keyword nowait: If set to True (default) the call waits for the result of spawning the actor.
+                         if False, the spawning is asynchronous.
 
-        :returns :class:`cell.actors.ActorProxy` with the id of the spawned actor.
+        :returns :class:`~.cell.actors.ActorProxy`, holding the id of the spawned actor.
         """
 
         actor_id = uuid()
@@ -122,14 +125,15 @@ class dAgent(Actor):
         return ActorProxy(name, actor_id, res,
                           connection=self.connection, **kwargs)
 
-
-    def select(self, actor):
+    def select(self, actor, **kwargs):
         """Get the id of already spawned actor
 
         :keyword actor: the name of the :class:`Actor` class
         """
-        actor = qualname(actor)
-        return first_reply(self.scatter('select', {'actor': actor}, limit=1), actor)
+        name = qualname(actor)
+        id = first_reply(self.scatter('select', {'actor': name}, limit=1), actor)
+        return ActorProxy(name, id, None,
+                          connection=self.connection, **kwargs)
 
     def kill(self, actor_id, nowait=False):
         return self.scatter('kill', {'actor_id': actor_id},
@@ -173,7 +177,11 @@ class dAgent(Actor):
         if actor is not self and self.pool is not None and self.pool.is_green:
             self.pool.spawn_n(actor._on_message, body, message)
         else:
-            actor._on_message(body, message)
+             if message.properties.get('reply_to'):
+                 actor._on_message(body, message)
+
+    def is_green(self):
+        return self.pool is not None and self.pool.is_green
 
     def get_default_scatter_limit(self, actor):
         return None

@@ -135,6 +135,8 @@ class Actor(object):
     consumer = None
 
     class state(object):
+        """ Placeholder class for actor's supported methods.
+        """
         pass
 
     def __init__(self, connection=None, id=None, name=None, exchange=None,
@@ -317,7 +319,6 @@ class Actor(object):
         if not nowait:
             return r.gather(**kwargs)
 
-
     def call_or_cast(self, method, args={}, nowait=False, **kwargs):
         """Apply remote `method` asynchronously or synchronously depending
         on the value of `nowait`.
@@ -450,6 +451,11 @@ class Actor(object):
             # don't reply, delegate to other agent.
             pass
         else:
+            #callback = message.properties['callback']
+            #kwargs = message.properties['ckwargs']
+            #r.update({'on_reply': callback})
+            #r.update({'on_reply_args': kwargs})
+
             self.reply(message, r)
 
     def reply(self, req, body, **props):
