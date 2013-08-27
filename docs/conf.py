@@ -3,8 +3,12 @@
 import sys
 import os
 
+# eventlet/gevent should not monkey patch anything.
 os.environ["GEVENT_NOPATCH"] = "yes"
 os.environ["EVENTLET_NOPATCH"] = "yes"
+
+root_dir = os.path.sep.join(os.path.realpath(__file__).split(os.path.sep)[:-2])
+sys.path.insert(0, root_dir)
 
 this = os.path.dirname(os.path.abspath(__file__))
 
