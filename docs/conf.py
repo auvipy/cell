@@ -3,6 +3,9 @@
 import sys
 import os
 
+os.environ["GEVENT_NOPATCH"] = "yes"
+os.environ["EVENTLET_NOPATCH"] = "yes"
+
 this = os.path.dirname(os.path.abspath(__file__))
 
 # If your extensions are in another directory, add it here. If the directory
@@ -10,7 +13,7 @@ this = os.path.dirname(os.path.abspath(__file__))
 # absolute, like shown here.
 sys.path.append(os.path.join(os.pardir, "tests"))
 sys.path.append(os.path.join(this, "_ext"))
-#import cell
+import cell
 
 # General configuration
 # ---------------------
