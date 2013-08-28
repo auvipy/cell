@@ -10,9 +10,24 @@ User Guide
     :depth: 1
 
 
+Actors and ActorProxy
+~~~~~~~~~~~~~~~~~~~~~
+When you implement a new actor type extend :py:class:`~cell.actrors.Actor` class.
+This forces you to implement all supported methods in the internal :py:class:~cell.actrors.Actor.state class.
+However, we do not create instances of actors directly, instead we ask :py:class:`~cell.agents.dAgent`
+
+.. code-block:: python
+
+    logger_ref = agent.spawn(Logger)
+
+The returned object (logger_ref) is not of Logger type like our actor, it is not even an Actor.
+It is an instance of :py:class:`~cell.actrors.ActorProxy`,  which is a wrapper (proxy) around an actor:
+The actual actor can be deployed on a different machine on different the celery workers.
+
+:py:class:`~cell.actrors.ActorProxy` transparently and invisibly to the client sends messages over the wire to the correct worker(s).
+
 Actor Delivery Types
 ~~~~~~~~~~~~~~~~~~~~
-
 Here we create two actors to use throughout the section.
 
 .. code-block:: python
@@ -25,10 +40,10 @@ The actors are of the same type (Logger), but have different identifiers.
 
 Cell supports few sending primitives, implementing the different delivery policies:
 
-* direct (using :py:meth:`~.actor.Actor.call`) - sends a message to a concrete actor (to the invoker)
+* direct (using :py:meth:`~.actor.Actor.send`) - sends a message to a concrete actor (to the invoker)
 .. code-block:: python
 
-    logger1.call('log', {'msg':'the quick brown fox ...'})
+    logger1.send('log', {'msg':'the quick brown fox ...'})
 
 The message is delivered to the remote counterpart of logger1.
 
@@ -100,7 +115,7 @@ We can easily refactor the Logger class to expose its state methods in more conv
                 print msg
 
         def log(msg):
-            self.call('log', {'msg':msg})
+            self.send('log', {'msg':msg})
 
 
 
@@ -146,7 +161,7 @@ The loop continues until the final count target is reached.
                 return n + 1
 
         def inc(self, n):
-            self.call('inc', {'n':n}, nowait=False)
+            self.send('inc', {'n':n}, nowait=False)
 
     class Counter(Actor):
         class state:
@@ -185,7 +200,7 @@ If the worker supports greenlets, only the Counter greenlet will block, allowing
                     return res
 
             def inc(self, n):
-                self.call('inc', {'n':n}, nowait=False)
+                self.send('inc', {'n':n}, nowait=False)
 
         class Counter(Actor):
             class state:
