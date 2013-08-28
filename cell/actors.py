@@ -1,6 +1,6 @@
 """cell.actors"""
-
 from __future__ import absolute_import, with_statement
+from functools import partial
 
 import sys
 import traceback
@@ -638,16 +638,42 @@ class Actor(object):
 
 
 class ActorProxy(object):
-    """A class that represents an actor started remotely."""
-
-    def __init__(self, name, id, async_start_result, **kwargs):
+    """An actor wrapper that represents an actor started remotely."""
+    def __init__(self, name, id, async_start_result=None, **kwargs):
         kwargs.update({'id': id})
-        self.__subject = symbol_by_name(name)(**kwargs)
-        self.__subject.id = id
+        self.__actor = symbol_by_name(name)(**kwargs)
+        self.id = self.__actor.id
         self.async_start_result = async_start_result
 
-    def __getattr__(self, name):
-            return getattr(self.__subject, name)
+    class state(object):
+        def __init__(self, parent, id, func):
+            self.parent = parent
+            self.id = id
+            self.func = func
 
+        def __call__(self, *args, **kw):
+            if args:
+                return self.func(
+                    getattr(self.parent.state, args[0]).__name__,
+                    args[1:], **kw)
+            else:
+                return self
+
+        def __getattr__(self, name):
+            return  partial(self.func, getattr(self.parent.state, name).__name__)
+
+    @cached_property
+    def throw(self):
+            return self.state(self.__actor, self.id, self.__actor.throw)
+
+    @cached_property
+    def send(self):
+        return self.state(self.__actor, self.id, self.__actor.send)
+
+    @cached_property
+    def scatter(self):
+            return self.state(self.__actor, self.id, self.__actor.scatter)
+
+    # Notify when the actor is started
     def wait_to_start(self):
         self.async_start_result._result
