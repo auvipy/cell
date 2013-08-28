@@ -638,7 +638,29 @@ class Actor(object):
 
 
 class ActorProxy(object):
-    """An actor wrapper that represents an actor started remotely."""
+    """An actor wrapper that represents an actor started remotely.
+
+        ActroProxy is created as a result of spawning an Actor.
+        The :py:meth:`~agents.dAgent.spawn` returns an instance of ActorProxy
+
+    *Examples*
+
+    .. code-block:: python
+
+        class GreetingActor(Actor):
+            class state:
+                def greet(who = 'world'):
+                    print 'hello %s' %who
+
+        gr_proxy = agent.spawns(GreetingActor)
+
+        # All of the below are valid calls for gr_proxy
+        gr_proxy.call.greet()
+        gr_proxy.call.greet({'who':'Foo'})
+        gr_proxy.throw.greet()
+        gr_proxy.scatter.greet()
+    """
+
     def __init__(self, name, id, async_start_result=None, **kwargs):
         kwargs.update({'id': id})
         self.__actor = symbol_by_name(name)(**kwargs)
