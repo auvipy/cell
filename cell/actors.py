@@ -18,6 +18,7 @@ from kombu.utils.encoding import safe_repr
 
 from . import __version__
 from . import exceptions
+from cell.utils import qualname
 from .results import AsyncResult
 from .utils import cached_property, enum, shortuuid, setattr_default
 
@@ -48,6 +49,13 @@ class ActorType(type):
 
 
 class Actor(object):
+
+    @classmethod
+    def become(cls, new_cls):
+        state_name = qualname(new_cls)
+        return type('%sActor' %new_cls.__name__, (cls, ), {
+                    'state': type(state_name, (cls.state, ), {})})
+
     __metaclass__ = ActorType
 
     AsyncResult = AsyncResult
@@ -90,7 +98,7 @@ class Actor(object):
 
     #: Default timeout in seconds as a float which after
     #: we give up waiting for replies.
-    default_timeout = 10.0
+    default_timeout = 5.0
 
     #: Time in seconds as a float which after replies expires.
     reply_expires = 100.0
@@ -314,6 +322,7 @@ class Actor(object):
 
         """
         kwargs.setdefault('timeout', self.default_timeout)
+
         r = self.call_or_cast(method, args, type=ACTOR_TYPE.SCATTER,
                               nowait=nowait, **kwargs)
         if not nowait:
@@ -325,9 +334,9 @@ class Actor(object):
 
         :param method: The name of the remote method to perform.
         :param args: Dictionary of arguments for the method.
-        :keyword nowait: If false the call will be block until the result
+        :keyword nowait: If false the call will block until the result
            is available and return it (default), if true the call will be
-           non-blocking.
+           non-blocking and no result will be returned.
         :keyword retry: If set to true then message sending will be retried
           in the event of connection failures. Default is decided by the
           :attr:`retry` attributed.
@@ -685,6 +694,9 @@ class ActorProxy(object):
             return  partial(self.func, getattr(self.parent.state, name).__name__)
 
     @cached_property
+    def call(self):
+        return self.state(self.__actor, self.id, self.__actor.call)
+    @cached_property
     def throw(self):
             return self.state(self.__actor, self.id, self.__actor.throw)
 
@@ -695,6 +707,10 @@ class ActorProxy(object):
     @cached_property
     def scatter(self):
             return self.state(self.__actor, self.id, self.__actor.scatter)
+
+
+    def __getattr__(self, name):
+            return getattr(self.__actor, name)
 
     # Notify when the actor is started
     def wait_to_start(self):
