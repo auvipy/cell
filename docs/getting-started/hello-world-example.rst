@@ -55,7 +55,7 @@ The code below starts a :py:class:`GreetingActor` and then invokes its py:meth:`
     greeter = agent.spawn(GreetingActor)
 
     # STEP 3: Use actor proxy to call methods on the remote actor
-    greeter.call('greet')
+    greeter.send('greet')
 
 
 Calling a method
@@ -66,7 +66,7 @@ Here we demonstrate direct delivery - the message is send to a particular actor 
 
 .. code-block:: python
 
-    actor.call('greet')
+    actor.send('greet')
 
 The :py:meth:`greet` method has been executed and you can verify that by looking at the workers console output.
 The remote actor of type GreetingActor you created earlier handle the method.
@@ -75,7 +75,7 @@ Note that the call is asynchronous and since 'great' is a void method no result 
 For getting results back and invoking methods synchronously check :ref:`Getting a result back section`
 
 The basic Actor API expose three more methods for sending a message:
- * :py:meth:`~.actors.Actor.send` - sends synchronously to a particular actor instance
+ * :py:meth:`~.actors.Actor.send` - sends to a particular actor instance
  * :py:meth:`~.actors.Actor.throw` - sends to an actor instance of the same type
  * :py:meth:`~.actors.Actor.scatter` - sends to all actor instances of the same type
 
@@ -88,7 +88,7 @@ with an argument :py:attr:`who`
 
 .. code-block:: python
 
-    actor.call('greet', {'who':'everyone'})
+    actor.send('greet', {'who':'everyone'})
 
 Getting a result back
 ~~~~~~~~~~~~~~~~~~~~~
@@ -114,7 +114,7 @@ We can get the result in two ways:
 
 .. code-block:: python
 
-    result = actor.call('greet', {'who':'everyone'}, nowait=True)
+    result = actor.send('greet', {'who':'everyone'}, nowait=True)
 
 d.. warning:: If you are using blocking calls, greenlets should be enabled in the celery worker:
 
@@ -134,18 +134,18 @@ You can read more about concurrency in celery in `here`_
 
 .. _`here`: http://docs.celeryproject.org/en/latest/userguide/concurrency/index.html
 
-* using a **non-blocking call** (set the nowait parameter to False), it returns an an :py:class:`~.AsyncResult` instance.
+* using a **non-blocking call** (set the nowait parameter to False, the default), it returns an an :py:class:`~.AsyncResult` instance.
 :py:class:`~.AsyncResult` can be used to check the state of the result, get the return value or if the method failed, the exception and traceback).
 
 .. code-block:: python
 
-    result = actor.call('greet', {'who':'everyone'}, nowait=False)
+    result = actor.send('greet', {'who':'everyone'}, nowait=False)
 
 The :meth:`~@AsyncResult.result` returns the result if it is ready or wait for the result to complete
 
 .. code-block:: python
 
-    result = actor.call('greet', {'who':'everyone'}, nowait=False)
+    result = actor.send('greet', {'who':'everyone'}, nowait=False)
     print result.result
 
 See cell.result for the complete result object reference.

@@ -10,11 +10,64 @@ User Guide
     :depth: 1
 
 
+Basics
+~~~~~~
+
+.. _calling-cheat:
+
+.. topic:: Quick Cheat Sheet for Agents
+
+  - ``a.spawn(cls, kwarg=value)``
+    start a remote actor instance
+
+  - ``a.select(cls)``
+    returns a remote actor instance if actor of type cls is already started
+
+  - ``a.kill(id)``
+    stops an actor by id
+
+.. topic:: Quick Cheat Sheet for Actors
+
+  - ``a.send.method(kwarg=value, nowait=False)``
+    invoke method on the remote actor instance asynchronously
+    returns AsyncResult
+
+  - ``a.send.method(kwarg=value, nowait=False)``
+    invoke method on a remote actor instance synchronously
+
+  - ``a.throw.method(kwarg=value)``
+    invoke method on a remote actor of type a instance asynchronously
+
+  - ``a.scatter.method(kwarg=value)``
+    invoke method on all remote actors of type a
+
+Create an Actor
+~~~~~~~~~~~~~~~~~
+To implement a new actor extend :py:class:`~cell.actors.Actor` class.
+Actor behaviour (all supported methods) should be implemented in the internal
+:py:class:`~cell.actors.Actor.state` class.
+
+.. code-block:: python
+
+    class Logger(Actor):
+        class state(Actor.state):
+            def log(self. msg):
+                print msg
+
+Then the actor can be started (spawned) remotely using :py:meth:`cell.agents.dAgent.spawn`
+
+.. code-block:: python
+
+    from kombu import Connection
+    from cell.agents import dAgent
+
+    agent = dAgent.Connection()
+    logger_ref = agent.spawn(Logger)
+
 Actors and ActorProxy
 ~~~~~~~~~~~~~~~~~~~~~
-When you implement a new actor type extend :py:class:`~cell.actrors.Actor` class.
-This forces you to implement all supported methods in the internal :py:class:~cell.actrors.Actor.state class.
-However, we do not create instances of actors directly, instead we ask :py:class:`~cell.agents.dAgent`
+We do not create instances of actors directly, instead we ask an :py:class:`~cell.agents.dAgent`
+to spawn (instantiate) an Actor of given type on a remote celery worker.
 
 .. code-block:: python
 
@@ -22,9 +75,27 @@ However, we do not create instances of actors directly, instead we ask :py:class
 
 The returned object (logger_ref) is not of Logger type like our actor, it is not even an Actor.
 It is an instance of :py:class:`~cell.actrors.ActorProxy`,  which is a wrapper (proxy) around an actor:
-The actual actor can be deployed on a different machine on different the celery workers.
+The actual actor can be deployed on a different machine on different celery worker.
 
 :py:class:`~cell.actrors.ActorProxy` transparently and invisibly to the client sends messages over the wire to the correct worker(s).
+It wraps all method defined in the `Actor.state` internal class.
+
+Select an existing actor
+~~~~~~~~~~~~~~~~~~~~~~~~
+If you know that an actor of the type you need is already spawned,
+but you don't know its id, you can get a proxy for it as follows:
+
+.. code-block:: python
+
+        from examples.logger import Logger
+        try:
+            logger = agent.select(Logger)
+        except KeyError:
+            logger = agent.spawn(Logger)
+
+In the above example we check if an actor is already spawned in any of the workers.
+If Logger is found in any of the workers, the :py:meth:`agents.Agent.select` will throw
+an exception of type :py:class:`KeyError`.
 
 Actor Delivery Types
 ~~~~~~~~~~~~~~~~~~~~
@@ -102,26 +173,77 @@ received by logger 2.
 
 
 
-Wrapping your method calls
+Type your method calls
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 Passing actor methods as a string is often not a convenient option.
-We can easily refactor the Logger class to expose its state methods in more convenient way.
+That's why we provide an API to call the method directly. The ActorProxy class returns  a partial when any of the Actor API methods is called (call, send, throw, scatter)
+actor.api_method.state_method_to_be_called returns a partial application of actor.api_method with firtsh argument set to method_to_be_called.
+Therefore, the following pair of executions on the instance of :py:class: `ActorProxy` are teh same
+Note that if the state_method_to_be_called does not exist in the :py:class: `ActorProxy.state` an exception ( :py:meth:`AttributeError`) will be thrown.
 
 .. code-block:: python
 
-    class Logger(Actor):
-        class state:
-            def log(msg):
-                print msg
+    logger.send.log({'msg':'Hello'}, nowait=False)
+    logger.send('log', {'msg':'Hello'}, nowait=False)
 
-        def log(msg):
-            self.send('log', {'msg':msg})
+    logger.call.log({'msg':'Hello'}, nowait=False)
+    logger.call('log', {'msg':'Hello'}, nowait=False)
 
+    logger.throw.log({'msg':'Hello'}, nowait=False)
+    logger.throw('log', {'msg':'Hello'}, nowait=False)
 
+    logger.scatter.log({'msg':'Hello'}, nowait=False)
+    logger.scatter('log', {'msg':'Hello'}, nowait=False)
 
+    # throws `AttributeError` on the sender
+    # and the message is not sent
+    logger.scatter.my_log({'msg':'Hello'}
 
-Request-reply pattern (waiting for the result of another actor)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Getting the result back
+~~~~~~~~~~~~~~~~~~~~~~
+Cell supports several types of return patterns:
+
+* fire and forget - whenever the nowait parameter is set to True, apply to all :py:meth:`cell.actors.Actor`) methods
+* returning future - apply only to :py:meth:`cell.Actors.call`. It returns :py:class:`cell.Actors.AsyncResults` instance when invoked with nowait is False. The result can be accessed when needed via :py:meth:`cell.Actors.AsyncResults.result`.
+* blocking call (returning the result) - apply to :py:meth:`cell.Actors.send` and :py:meth:`cell.Actors.throw` when invoked with nowait = False
+* generator - apply to :py:meth:`cell.Actors.scatter` when invoked with nowait = False
+
+ScatterGatherFirstCompletedActor
+-------------------------------
+Here is how you can send a broadcast message to all actors of a given type and wait for the first message that
+is received.
+
+.. code-block:: python
+
+    from cell.agents import first_reply
+    first_reply(actor.scatter('greet', limit=1)
+
+You can implement you own :py:meth:`first_reply` function. Remember that the scatter method returns generator.
+Then all you need to do is call its next() method only once:
+
+.. code-block:: python
+
+    def first_reply(replies, key):
+        try:
+            return replies.next()
+        except StopIteration:
+            raise KeyError(key)
+
+Collect all replies
+-------------------
+if limit is not specifies, the
+
+.. code-block:: python
+
+    # returns a generator
+    res = actor.scatter('greet', timeout = 5)
+
+    # Iterate over all the results until a timeout is reached
+    for i in res:
+        print i
+
+Request-reply pattern
+~~~~~~~~~~~~~~~~~~~~~~
 
 .. note:: When using actors, always start celery with greenlet support enabled!
 (see `Greenlets in celery`_ for more information)
@@ -246,8 +368,8 @@ Each message is processed in a separate greenlet.
 If one greenlet/actor blocks, the execution is passed to the next greenlet and the
 (system) thread as a whole is not blocked.
 
-Receiving messages
-~~~~~~~~~~~~~~~~~~
+Receiving arbitrary messages
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 An actor message has a name (label) and arguments.
 Each message name should have a corresponding method in the Actor's internal state class.
 Otherwise, an error code is returned as a result of the message call.
@@ -257,20 +379,18 @@ no error code will be returned. You can find the error expecting the worker log 
 If you want to implement your own pattern matching on messages and/or want to accept generic method names,
 you can override the :py:meth:`~.cell.actors.Actor.default_receive` method.
 
-Select an existing actor
-~~~~~~~~~~~~~~~~~~~~~~~~
-If you know that an actor of the type you need is already spawned,
-but you don't know its id, you can get a proxy for it as follows:
+Exceptions
+~~~~~~~~~~
+It can happen that while a message is being processed by an actor, that some kind of exception is thrown, e.g. a database exception.
 
-.. code-block:: python
+What happens to the Message
+---------------------------
 
-        from examples.logger import Logger
-        try:
-            logger = agent.select(Logger)
-        except KeyError:
-            logger = agent.spawn(Logger)
+If an exception is thrown while a message is being processed (i.e. taken out of its queue and handed over to the current behavior),
+then this message will be lost. It is important to understand that it is not put back on the queue.
+So if you want to retry processing of a message, you need to deal with it yourself by catching the exception and retry your flow.
 
-In the above example we check if an actor is already spawned in any of the workers.
-If Logger is found in any of the workers, the :py:meth:`agents.Agent.select` will throw
-an exception of type :py:class:`KeyError`.
+What happens to the actor
+-------------------------
+Actor is not stopped, either restarted, it can continue receiving other messages.
 

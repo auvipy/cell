@@ -310,16 +310,30 @@ class Actor(object):
     def scatter(self, method, args={}, nowait=False, **kwargs):
         """Broadcast method to all agents.
 
-        In this context the reply limit is disabled, and the timeout
-        is set to 1 by default, which means we collect all the replies
-        that managed to be sent within the requested timeout.
+        if nowait is False, returns generator to iterate over the results.
+
+        :keyword limit: does exactly limit number of reads from the queue.
+        read from the queue is either  message consume, or a timeout. The limit is disabled by default.
+        :keyword timeout: the timeout for each read from the queue. The default is actor.default_timeout
+        :keyword ignore_timeout: the default is False. If True and limit parameter is not set
+        the generator is infinite - waits for messages forever.
+
+         **Examples**
+
+        ``scatter`` is a generator (if nowait is False)::
+            >>> res = scatter(ignore_timeouts=True):
+            >>> res.next() # one event consumed, or timed out.
+
+            >>> res = scatter(ignore_timeouts=True, limit = 2):
+            >>> for i in  scatter(ignore_timeouts=True): # two events consumed or timeout
+            >>>     pass
+
+
+            >>> for _ in scatter(ignore_timeouts=True):
+        ...     pass  # loop forever.
 
         See :meth:`call_or_cast` for a full list of supported
         arguments.
-
-        If the keyword argument `nowait` is false (default) it
-        will block and return the replies.
-
         """
         kwargs.setdefault('timeout', self.default_timeout)
 
@@ -507,8 +521,11 @@ class Actor(object):
 
     def _collect_replies(self, conn, channel, ticket, *args, **kwargs):
         kwargs.setdefault('timeout', self.default_timeout)
+
         if 'limit' not in kwargs and self.agent:
             kwargs['limit'] = self.agent.get_default_scatter_limit()
+            if not kwargs['limit']: kwargs.setdefault('ignore_timeout', False)
+
         return collect_replies(conn, channel, self.get_reply_queue(ticket),
                                *args, **kwargs)
 
