@@ -26,7 +26,6 @@ def first_reply(replies, key):
     except StopIteration:
         raise KeyError(key)
 
-
 class dAgent(Actor):
     types = (ACTOR_TYPE.RR, ACTOR_TYPE.SCATTER)
 
@@ -41,16 +40,16 @@ class dAgent(Actor):
             actor.agent = weakref.proxy(self.agent)
             actor.on_agent_ready()
 
-        def spawn(self, name, id, kwargs={}):
+        def spawn(self, cls, id, kwargs={}):
             """Add actor to the registry and start the actor's main method."""
             try:
-                actor = symbol_by_name(name)(
+                actor = symbol_by_name(cls)(
                     connection=self.connection, id=id, **kwargs)
 
                 if actor.id in self.registry:
                     warn('Actor id %r already exists', actor.id)
                 self._start_actor_consumer(actor)
-                debug('Actor registered: %s', name)
+                debug('Actor registered: %s', cls)
                 return actor.id
             except Exception as exc:
                 error('Cannot start actor: %r', exc, exc_info=True)
@@ -74,9 +73,9 @@ class dAgent(Actor):
                 if actor.consumer and actor.consumer.channel:
                     ignore_errors(self.connection, actor.consumer.cancel)
 
-        def select(self, actor):
+        def select(self, cls):
             for key, val in self.registry.iteritems():
-                if qualname(val.__class__) == actor:
+                if qualname(val.__class__) == cls:
                     return key
             # delegate to next agent.
             raise Actor.Next()
@@ -99,7 +98,7 @@ class dAgent(Actor):
         self.registry = {}
         Actor.__init__(self, connection=connection, id=id, agent=self)
 
-    def spawn(self, actor_class, kwargs={}, nowait=False):
+    def spawn(self, cls, kwargs={}, nowait=False):
         """Spawn a new actor on a celery worker by sending
         a remote command to the worker.
 
@@ -115,21 +114,21 @@ class dAgent(Actor):
         """
 
         actor_id = uuid()
-        name = qualname(actor_class)
-        res = self.call('spawn', {'name': name, 'id': actor_id,
+        name = qualname(cls)
+        res = self.call('spawn', {'cls': name, 'id': actor_id,
                                   'kwargs': kwargs},
                         type=ACTOR_TYPE.RR, nowait=nowait)
-        return ActorProxy(name, actor_id, res,
+        return ActorProxy(name, actor_id, res, agent = self,
                           connection=self.connection, **kwargs)
 
-    def select(self, actor, **kwargs):
+    def select(self, cls, **kwargs):
         """Get the id of already spawned actor
 
         :keyword actor: the name of the :class:`Actor` class
         """
-        name = qualname(actor)
+        name = qualname(cls)
         id = first_reply(
-            self.scatter('select', {'actor': name}, limit=1), actor)
+            self.scatter('select', {'cls': name}, limit=1), cls)
         return ActorProxy(name, id, None,
                           connection=self.connection, **kwargs)
 
@@ -183,9 +182,8 @@ class dAgent(Actor):
     def is_green(self):
         return self.pool is not None and self.pool.is_green
 
-    def get_default_scatter_limit(self, actor):
+    def get_default_scatter_limit(self):
         return None
-
 
 class Agent(ConsumerMixin):
     actors = []
