@@ -411,6 +411,8 @@ class Actor(object):
     def Consumer(self, channel, **kwargs):
         """Returns a :class:`kombu.Consumer` instance for this Actor"""
         kwargs.setdefault('no_ack', self.no_ack)
+        print 'Exchange is', self.exchange
+        print 'Queue is', self.get_direct_queue()
         return Consumer(channel, self.get_queues(),
                         callbacks=[self.on_message], **kwargs)
 
@@ -446,6 +448,8 @@ class Actor(object):
         #debug('exchange we are sending to is:', exchange.name)
         props = dict(props, exchange=exchange, before=before)
 
+        print 'The routing key is', self.routing_key
+        print 'The exchange is', exchange
         ipublish(producers[self._connection], self._publish,
                  (body, ), dict(props, exchange=exchange, before=before),
                  **(retry_policy or {}))
@@ -657,8 +661,6 @@ class Actor(object):
     def routing_key(self):
         if self.default_routing_key:
             return self.default_routing_key
-        elif self.agent:
-            return self.agent.id
         else:
             return self.id
 
