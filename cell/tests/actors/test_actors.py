@@ -408,19 +408,23 @@ class test_Actor(Case):
         a = A(conn, agent=agent)
         rk = a.routing_key
 
-        self.assertEquals(a.routing_key, agent.id)
+        self.assertNotEqual(a.routing_key, agent.id)
         self.assert_cast_calls_basic_publish_with(a, rk, exch, None)
 
-        a = A(conn, agent=agent)
-        a.default_routing_key = 'fooooooooo'
+        agent = Mock(id=uuid())
+        id = '1234'
+        a = A(conn, agent=agent, id=id)
         rk = a.routing_key
+
+        self.assertEqual(a.routing_key, id)
+        self.assert_cast_calls_basic_publish_with(a, rk, exch, None)
 
         self.assertEquals(a.routing_key, rk)
         self.assert_cast_calls_basic_publish_with(a, rk, exch, None)
 
         a = A(conn)
         a.default_routing_key = 'fooooooooo'
-        rk = a.routing_key
+        rk = a.default_routing_key
 
         self.assertEquals(a.routing_key, rk)
         self.assert_cast_calls_basic_publish_with(a, rk, exch, None)
