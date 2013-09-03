@@ -411,8 +411,6 @@ class Actor(object):
     def Consumer(self, channel, **kwargs):
         """Returns a :class:`kombu.Consumer` instance for this Actor"""
         kwargs.setdefault('no_ack', self.no_ack)
-        print 'Exchange is', self.exchange
-        print 'Queue is', self.get_direct_queue()
         return Consumer(channel, self.get_queues(),
                         callbacks=[self.on_message], **kwargs)
 

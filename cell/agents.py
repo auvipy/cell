@@ -171,13 +171,13 @@ class dAgent(Actor):
         :meth:`cell.actors.Actor._on_message`.
 
         """
-        if actor is not self and self.pool is not None and self.pool.is_green:
+        if actor is not self and self.is_green:
             self.pool.spawn_n(actor._on_message, body, message)
         else:
-            if message.properties.get('reply_to'):
+            if not self.is_green and message.properties.get('reply_to'):
                 warn('Starting a blocking call (%s) on actor (%s) when greenlets are disabled.',
                      itemgetter('method')(body), actor.__class__)
-                actor._on_message(body, message)
+            actor._on_message(body, message)
 
     def is_green(self):
         return self.pool is not None and self.pool.is_green
