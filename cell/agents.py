@@ -222,5 +222,5 @@ class Agent(ConsumerMixin):
     def get_consumers(self, Consumer, channel):
         return [actor.Consumer(channel) for actor in self.actors]
 
-     def get_default_scatter_limit(self, actor):
+    def get_default_scatter_limit(self, actor):
         return None

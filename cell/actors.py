@@ -18,6 +18,7 @@ from kombu.utils.encoding import safe_repr
 
 from . import __version__
 from . import exceptions
+from cell.exceptions import WrongNumberOfArguments
 from cell.utils import qualname
 from .results import AsyncResult
 from .utils import cached_property, enum, shortuuid, setattr_default
@@ -49,13 +50,6 @@ class ActorType(type):
 
 
 class Actor(object):
-
-    @classmethod
-    def become(cls, new_cls):
-        state_name = qualname(new_cls)
-        return type('%sActor' %new_cls.__name__, (cls, ), {
-                    'state': type(state_name, (cls.state, ), {})})
-
     __metaclass__ = ActorType
 
     AsyncResult = AsyncResult
@@ -177,7 +171,7 @@ class Actor(object):
         # - setup logging
         logger_name = self.name
         if self.agent:
-            logger_name = '%s#%s' % (self.name, shortuuid(self.agent.id))
+            logger_name = '%s#%s' % (self.name, shortuuid(self.id))
         self.log = Log('!<%s>' % logger_name, logger=logger)
         self.state = self.contribute_to_state(self.construct_state())
 
@@ -686,8 +680,8 @@ class ActorProxy(object):
 
     def __init__(self, name, id, async_start_result=None, **kwargs):
         kwargs.update({'id': id})
-        self.__actor = symbol_by_name(name)(**kwargs)
-        self.id = self.__actor.id
+        self._actor = symbol_by_name(name)(**kwargs)
+        self.id = self._actor.id
         self.async_start_result = async_start_result
 
     class state(object):
@@ -700,31 +694,33 @@ class ActorProxy(object):
             if args:
                 return self.func(
                     getattr(self.parent.state, args[0]).__name__,
-                    args[1:], **kw)
+                    *args[1:], **kw)
             else:
-                return self
+                raise WrongNumberOfArguments(
+                    'No arguments given to %s' %self.func)
 
         def __getattr__(self, name):
             return  partial(self.func, getattr(self.parent.state, name).__name__)
 
     @cached_property
     def call(self):
-        return self.state(self.__actor, self.id, self.__actor.call)
+        return self.state(self._actor, self.id, self._actor.call)
+
     @cached_property
     def throw(self):
-            return self.state(self.__actor, self.id, self.__actor.throw)
+            return self.state(self._actor, self.id, self._actor.throw)
 
     @cached_property
     def send(self):
-        return self.state(self.__actor, self.id, self.__actor.send)
+        return self.state(self._actor, self.id, self._actor.send)
 
     @cached_property
     def scatter(self):
-            return self.state(self.__actor, self.id, self.__actor.scatter)
+            return self.state(self._actor, self.id, self._actor.scatter)
 
 
     def __getattr__(self, name):
-            return getattr(self.__actor, name)
+            return getattr(self._actor, name)
 
     # Notify when the actor is started
     def wait_to_start(self):

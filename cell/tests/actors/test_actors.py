@@ -3,8 +3,9 @@ import ast
 
 from kombu import Connection
 from kombu.common import uuid, maybe_declare
-from mock import patch, ANY
-from cell.actors import Actor
+from mock import patch, ANY, MagicMock
+from cell.actors import Actor, ActorProxy
+from cell.exceptions import WrongNumberOfArguments
 from cell.results import AsyncResult
 from cell.tests.utils import Case, Mock, with_in_memory_connection
 from cell.actors import ACTOR_TYPE
@@ -12,7 +13,7 @@ from kombu.compression import compress
 from kombu.entity import Exchange
 from kombu.exceptions import StdChannelError
 from kombu.messaging import Consumer
-
+from cell.utils import qualname
 
 class A(Actor):
     pass
@@ -680,6 +681,15 @@ class test_Actor(Case):
         message.ack.assert_called_once_with()
         self.assertIsNone(result)
 
+    def test_on_message_delegated_to_agent(self):
+        body, message = get_test_message('bar', {'bar': 'foo_arg'},
+                                         A.__class__.__name__)
+        a = A()
+        a.agent = Mock()
+        result = a.on_message(body, message)
+
+        a.agent.process_message.assert_called_once_with(a, body, message)
+
     def assert_on_message_exception_raise(self, exception_cls, ack_count):
         body, message = get_test_message('bar', {'bar': 'foo_arg'},
                                          A.__class__.__name__)
@@ -970,3 +980,128 @@ class test_Actor(Case):
 
         exchange.exchange_unbind.assert_called_with(exchange=source_ex,
                                                     routing_key=routing_key)
+
+
+
+class As(Actor):
+    class state():
+        def foo(self, who=None):
+            pass
+
+    def meth(self):
+        pass
+
+class test_ActorProxy(Case):
+
+    @with_in_memory_connection
+    def test_init(self, conn):
+        """test that __init__ sets fields"""
+        id = uuid()
+        ag, res = Mock(), Mock()
+        # we need to have wait for result,
+        a1 = ActorProxy(qualname(A), id, connection=conn, agent=ag)
+
+        self.assertEqual(a1.id, id)
+        self.assertIsNone(a1.async_start_result)
+        self.assertIsInstance(a1._actor, A)
+        self.assertEqual(a1._actor.name, A().__class__.__name__)
+        self.assertEqual(a1._actor.agent, ag)
+        self.assertEqual(a1._actor.id, a1.id)
+        self.assertEqual(a1._actor.connection, conn)
+
+        a1 = ActorProxy(qualname(A), id, res, connection = conn, agent = ag)
+
+        self.assertEqual(a1.id, id)
+        self.assertEqual(a1.async_start_result, res)
+        self.assertEqual(a1._actor.id, a1.id)
+        self.assertIsInstance(a1._actor, A)
+        self.assertEqual(a1._actor.name, A().__class__.__name__)
+        self.assertEqual(a1._actor.agent, ag)
+        self.assertEqual(a1._actor.connection, conn)
+
+    def assert_actor_method_called(self, meth, func):
+        args, kwargs = ['foo',  {'who':'the quick brown...'}], {'nowait':True}
+
+        func(*args, **kwargs)
+
+        meth.assert_called_once_with(*args, **kwargs)
+
+        args, kwargs = ['bar',  {'who':'the quick brown...'}], {'nowait':True}
+
+        with self.assertRaises(AttributeError):
+            func(*args, **kwargs)
+
+        with self.assertRaises(WrongNumberOfArguments):
+            func()
+
+    def assert_actor_method_called_with_par_foo(
+            self, mock_meth, func):
+
+        args, kwargs = [{'who':'the quick brown...'}], {'nowait':True}
+
+        func.foo(*args, **kwargs)
+
+        mock_meth.assert_called_once_with('foo', *args, **kwargs)
+
+        with self.assertRaises(AttributeError):
+            func.bar(*args, **kwargs)
+
+    @patch.object(Actor, 'call', return_value=None)
+    def test_call_dot(self, call):
+        a1 = ActorProxy(qualname(As), uuid)
+        self.assert_actor_method_called_with_par_foo(call, a1.call)
+
+    @patch.object(Actor, 'call', return_value=None)
+    def test_call(self, call):
+        a1 = ActorProxy(qualname(As), uuid())
+        self.assert_actor_method_called(call, a1.call)
+
+    @patch.object(Actor, 'send', return_value=None)
+    def test_send(self, send):
+        a1 = ActorProxy(qualname(As), uuid())
+        self.assert_actor_method_called(send, a1.send)
+
+    @patch.object(Actor, 'send', return_value=None)
+    def test_send_dot(self, send):
+        a1 = ActorProxy(qualname(As), uuid())
+        self.assert_actor_method_called_with_par_foo(send, a1.send)
+
+    @patch.object(Actor, 'throw', return_value=None)
+    def test_throw(self, throw):
+        a1 = ActorProxy(qualname(As), uuid())
+        self.assert_actor_method_called(throw, a1.throw)
+
+    @patch.object(Actor, 'throw', return_value=None)
+    def test_throw_dot(self, throw):
+        a1 = ActorProxy(qualname(As), uuid())
+        self.assert_actor_method_called_with_par_foo(throw, a1.throw)
+
+    @patch.object(Actor, 'scatter', return_value=None)
+    def test_scatter(self, scatter):
+        a1 = ActorProxy(qualname(As), uuid())
+        self.assert_actor_method_called(scatter, a1.scatter)
+
+    @patch.object(Actor, 'scatter', return_value=None)
+    def test_scatter_dot(self, scatter):
+        a1 = ActorProxy(qualname(As), uuid())
+        self.assert_actor_method_called_with_par_foo(scatter, a1.scatter)
+
+    @patch.object(As, 'meth', return_value=None)
+    def test_arbitrary_actor_method(self, meth):
+        a1 = ActorProxy(qualname(As), uuid())
+        a1.meth()
+
+        meth.assert_called_once_with()
+        meth.reset_mock()
+
+        args = ['bar']
+
+        a1.meth(*args)
+        meth.assert_called_once_with(*args)
+
+    def test_non_existing_actor_method(self):
+        a1 = ActorProxy(qualname(As), uuid())
+        with self.assertRaises(AttributeError):
+            a1.bar()
+
+

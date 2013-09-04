@@ -24,32 +24,6 @@ class test_dAgent(Case):
         self.assertEqual(a.id, id)
         self.assertEqual(a.agent, a)
 
-    @patch('cell.actors.uuid', return_value=uuid())
-    @patch('cell.agents.uuid', return_value=uuid())
-    @with_in_memory_connection
-    def test_spawn(self, conn, actor_static_id, ticket_static_id):
-        # Ensure the ActorProxy is returned
-        # Ensure cast is invoked with the correct arguments
-
-        ag, a = dA(conn), A()
-        ag.cast = Mock()
-
-        proxy = ag.spawn(A)
-
-        ag.cast.assert_called_once_with(
-            'spawn',
-            {'cls': qualname(a), 'id': actor_static_id.return_value,
-             'kwargs': {}},
-            ANY, reply_to=ticket_static_id.return_value,
-            type=ACTOR_TYPE.RR, nowait=False)
-
-        self.assertIsInstance(proxy, ActorProxy)
-        self.assertEqual(proxy.async_start_result.ticket,
-                         ticket_static_id.return_value)
-
-        # Agent state is not affected by the remote spawn call
-        self.assertDictEqual(ag.state.registry, {})
-
     @with_in_memory_connection
     @patch('cell.agents.uuid', return_value=uuid())
     def test_kill_actor_by_id(self, conn, static_id):
@@ -104,6 +78,39 @@ class test_dAgent(Case):
         error.reset_mock()
         ag.state.spawn('Ala Bala', a1.id)
         error.called_once_with('Cannot start actor: %r', 'ihu', ANY)
+
+    @patch('cell.actors.ActorProxy', return_value=Mock())
+    @patch('cell.actors.uuid', return_value=uuid())
+    @patch('cell.agents.uuid', return_value=uuid())
+    @with_in_memory_connection
+    def test_spawn(self, conn, actor_static_id, ticket_static_id, proxy):
+        # Ensure the ActorProxy is returned
+        # Ensure cast is invoked with the correct arguments
+
+        ag, a = dA(conn), A()
+        ag.cast = Mock()
+
+        proxy = ag.spawn(A)
+
+        ag.cast.assert_called_once_with(
+            'spawn',
+            {'cls': qualname(a), 'id': actor_static_id.return_value,
+             'kwargs': {}},
+            ANY, reply_to=ticket_static_id.return_value,
+            type=ACTOR_TYPE.RR, nowait=False)
+
+        # Check ActorProxy initialisation
+        self.assertIsInstance(proxy, ActorProxy)
+        self.assertEqual(proxy.id, actor_static_id.return_value)
+        self.assertIsInstance(proxy._actor, A)
+        self.assertEqual(proxy._actor.name, A().__class__.__name__)
+        self.assertEqual(proxy._actor.connection, conn)
+        self.assertEqual(proxy._actor.agent, ag)
+        self.assertEqual(proxy.async_start_result.ticket,
+                         ticket_static_id.return_value)
+
+        # Agent state is not affected by the remote spawn call
+        self.assertDictEqual(ag.state.registry, {})
 
     @with_in_memory_connection
     @patch('cell.actors.Actor.Consumer', return_value=Mock())
@@ -188,12 +195,34 @@ class test_dAgent(Case):
         # returns id if it is started
         ag = dAgent(conn)
         ag.scatter = Mock(return_value = scatter_result())
+
         proxy = ag.select(A)
 
         ag.scatter.assert_called_once_with(
             'select', {'cls':qualname(A)}, limit=1)
+
+        # Check ActorProxy initialisation
+        self.assertIsInstance(proxy, ActorProxy)
         self.assertEqual(proxy.id, id1)
-        self.assertEquals(proxy.name, A().__class__.__name__)
+        self.assertIsInstance(proxy._actor, A)
+        self.assertEqual(proxy._actor.name, A().__class__.__name__)
+        self.assertEqual(proxy._actor.connection, conn)
+        self.assertEqual(proxy._actor.agent, ag)
+        self.assertIsNone(proxy.async_start_result)
+
+    @with_in_memory_connection
+    def test_select_returns_error_when_no_result_found(self, conn):
+        id1, id2 = uuid(), uuid()
+        def scatter_result():
+            yield None
+        # returns id if it is started
+        gen = scatter_result()
+        gen.next()
+        ag = dAgent(conn)
+        ag.scatter = Mock(return_value = gen)
+
+        with self.assertRaises(KeyError):
+           ag.select(A)
 
     @with_in_memory_connection
     def test_state_select_returns_from_registry(self, conn):

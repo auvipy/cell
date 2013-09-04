@@ -44,3 +44,7 @@ class NotBoundError(Exception):
 class NoRouteError(Exception):
     """Presence: No known route for wanted item."""
     pass
+
+class WrongNumberOfArguments(Exception):
+    """An actor call method is invoked without arguments"""
+    pass
