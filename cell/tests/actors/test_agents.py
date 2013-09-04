@@ -13,7 +13,6 @@ class dA(dAgent):
 class A(Actor):
     pass
 
-
 class test_dAgent(Case):
 
     @patch('cell.actors.Actor')
@@ -66,7 +65,7 @@ class test_dAgent(Case):
 
     @with_in_memory_connection
     @patch('cell.actors.Actor.Consumer', return_value=Mock())
-    def test_state_spawn(self, conn, consumer):
+    def test_state_spawn_when_id_not_in_registry(self, conn, consumer):
         ag, a, id = dA(conn), A(), uuid()
 
         self.assertEquals(ag.state.registry, {})
@@ -77,6 +76,34 @@ class test_dAgent(Case):
         self.assertIs(type(actor), A)
         self.assertIsNotNone(actor.consumer)
         actor.consumer.consume.assert_called_once_with()
+
+    @with_in_memory_connection
+    @patch('cell.agents.warn', return_value=Mock())
+    def test_state_spawn_when_id_in_registry(self, conn, warn):
+        ag, a1 = dA(conn), A(conn)
+        ag.state.registry[a1.id] = a1
+
+        ag.state.spawn(qualname(a1), a1.id)
+
+        warn.assert_called_once_with(ANY, a1.id)
+
+
+    @with_in_memory_connection
+    @patch('cell.agents.error', return_value=Mock())
+    def test_state_spawn_when_error_occurs(self, conn, error):
+        ag, a1 = dA(conn), A(conn)
+        ag.state.registry[a1.id] = a1
+        ag.state._start_actor_consumer = Mock(side_effect=Exception('FooError'))
+
+        ag.state.spawn(qualname(a1), a1.id)
+        error.called_once_with('Cannot start actor: %r',
+                                             Exception('FooError'), ANY)
+
+        ag.state._start_actor_consumer.reset_mock()
+        ag.state._start_actor_consumer = Mock()
+        error.reset_mock()
+        ag.state.spawn('Ala Bala', a1.id)
+        error.called_once_with('Cannot start actor: %r', 'ihu', ANY)
 
     @with_in_memory_connection
     @patch('cell.actors.Actor.Consumer', return_value=Mock())
@@ -145,16 +172,6 @@ class test_dAgent(Case):
         self.assertEqual(a1.consumer.cancel.call_count, 1)
 
     @with_in_memory_connection
-    @patch('cell.agents.warn', return_value=Mock())
-    def test_spawn_when_id_in_registry(self, conn, warn):
-        ag, a1 = dA(conn), A(conn)
-        ag.state.registry[a1.id] = a1
-
-        ag.state.spawn(qualname(a1), a1.id)
-
-        warn.assert_called_once_with(ANY, a1.id)
-
-    @with_in_memory_connection
     def test_stop_actor_when_id_not_in_registry(self, conn):
         ag, a1 = dA(conn), A(conn)
         self.assertEqual(ag.state.registry, {})
@@ -162,3 +179,116 @@ class test_dAgent(Case):
         with self.assertRaises(Actor.Next):
             ag.state.kill(a1.id)
 
+    @with_in_memory_connection
+    def test_select_returns_scatter_results(self, conn):
+        id1, id2 = uuid(), uuid()
+        def scatter_result():
+            yield id1
+            yield id2
+        # returns id if it is started
+        ag = dAgent(conn)
+        ag.scatter = Mock(return_value = scatter_result())
+        proxy = ag.select(A)
+
+        ag.scatter.assert_called_once_with(
+            'select', {'cls':qualname(A)}, limit=1)
+        self.assertEqual(proxy.id, id1)
+        self.assertEquals(proxy.name, A().__class__.__name__)
+
+    @with_in_memory_connection
+    def test_state_select_returns_from_registry(self, conn):
+        class B(Actor):
+            pass
+
+        ag, al = dAgent(conn), A(conn)
+        id1, id2 = uuid(), uuid()
+
+        with self.assertRaises(Actor.Next):
+            ag.state.select(qualname(A))
+
+        ag.state.registry[id1] = A()
+        key = ag.state.select(qualname(A))
+
+        self.assertEqual(key, id1)
+
+        ag.state.registry[id2] = B(conn)
+        keyA = ag.state.select(qualname(A))
+        keyB = ag.state.select(qualname(B))
+        self.assertEqual(keyA, id1)
+        self.assertEqual(keyB, id2)
+
+
+    @with_in_memory_connection
+    def test_messages_processing_when_greenlets_are_enabled(self, conn):
+
+        ag = dAgent(conn)
+        ag.pool = Mock()
+        ag.pool.is_green = True
+        al, body, message = Mock(), Mock(), Mock()
+        self.assertEqual(ag.is_green(), True)
+
+        # message is processed in a separate pool if
+        # greenlets are enabled and the sending actor is not an agent
+        ag.process_message(al, body, message)
+        ag.pool.spawn_n.assert_called_once_with(al._on_message, body, message)
+        ag.pool.reset_mock()
+
+        # message is always processed in a the same thread
+        # if the sending actor is an agent
+        ag._on_message = Mock()
+        ag.process_message(ag, body, message)
+        self.assertEqual(ag.pool.spawn_n.call_count, 0)
+        ag._on_message.assert_called_once_with(body, message)
+
+    @with_in_memory_connection
+    def test_message_processing_when_greenlets_are_disabled(self, conn):
+        ag= dAgent(conn)
+        ag.pool = Mock()
+        al = Mock()
+        ag.pool.is_green = False
+        body, message = Mock(), Mock()
+
+        ag.process_message(al, body, message)
+
+        al._on_message.assert_called_once_with(body, message)
+
+        ag._on_message = Mock()
+        ag.process_message(ag, body, message)
+        self.assertEqual(ag.pool.spawn_n.call_count, 0)
+        ag._on_message.assert_called_once_with(body, message)
+
+    @with_in_memory_connection
+    @patch('cell.agents.warn', return_value=Mock())
+    def test_message_processing_warning(self, conn, warn):
+
+        ag, al = dAgent(conn), A(conn)
+        ag.pool = Mock()
+        al._on_message  = Mock()
+        body, message = Mock(), Mock()
+
+        # warning is not triggered when greenlets are disabled
+        ag.pool.is_green = True
+        ag.process_message(al, body, message)
+        self.assertEquals(warn.call_count, 0)
+        warn.reset_mock()
+
+        # warning is not triggered when greenlets are enabled
+        # but the call is not blocking
+        ag.pool.is_green = True
+        ag.process_message(al, body, message)
+        self.assertEquals(warn.call_count, 0)
+        warn.reset_mock()
+
+        # warning is not triggered when greenlets are disables
+        # and teh call is blocking
+        ag.pool.is_green = False
+
+        import cell
+        cell.agents.itemgetter = Mock()
+        message.properties = {'reply_to': '1234'}
+        ag.process_message(al, body, message)
+        warn.assert_called_once_with(
+            'Starting a blocking call (%s) on actor (%s) when greenlets are disabled.',
+            ANY, al.__class__)
+
+        cell.agents.itemgetter.called_once_with('method')

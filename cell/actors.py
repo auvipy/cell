@@ -445,9 +445,6 @@ class Actor(object):
         exchange = exchange or self.type_to_exchange[type]()
         #debug('exchange we are sending to is:', exchange.name)
         props = dict(props, exchange=exchange, before=before)
-
-        print 'The routing key is', self.routing_key
-        print 'The exchange is', exchange
         ipublish(producers[self._connection], self._publish,
                  (body, ), dict(props, exchange=exchange, before=before),
                  **(retry_policy or {}))

@@ -11,21 +11,13 @@ from kombu.mixins import ConsumerMixin
 from kombu.utils import symbol_by_name
 
 from .actors import Actor, ActorProxy, ACTOR_TYPE
-from .utils import qualname
+from .utils import qualname, first_reply
 
 __all__ = ['Agent', 'dAgent']
 
 logger = get_logger(__name__)
 debug, warn, error = logger.debug, logger.warn, logger.error
 from operator import itemgetter
-
-
-def first_reply(replies, key):
-    try:
-        return replies.next()
-    except StopIteration:
-        raise KeyError(key)
-
 class dAgent(Actor):
     types = (ACTOR_TYPE.RR, ACTOR_TYPE.SCATTER)
 
@@ -129,7 +121,7 @@ class dAgent(Actor):
         name = qualname(cls)
         id = first_reply(
             self.scatter('select', {'cls': name}, limit=1), cls)
-        return ActorProxy(name, id, None,
+        return ActorProxy(name, id, agent=self,
                           connection=self.connection, **kwargs)
 
     def kill(self, actor_id, nowait=False):
@@ -171,10 +163,10 @@ class dAgent(Actor):
         :meth:`cell.actors.Actor._on_message`.
 
         """
-        if actor is not self and self.is_green:
+        if actor is not self and self.is_green():
             self.pool.spawn_n(actor._on_message, body, message)
         else:
-            if not self.is_green and message.properties.get('reply_to'):
+            if not self.is_green() and message.properties.get('reply_to'):
                 warn('Starting a blocking call (%s) on actor (%s) when greenlets are disabled.',
                      itemgetter('method')(body), actor.__class__)
             actor._on_message(body, message)
@@ -183,52 +175,4 @@ class dAgent(Actor):
         return self.pool is not None and self.pool.is_green
 
     def get_default_scatter_limit(self):
-        return None
-
-class Agent(ConsumerMixin):
-    actors = []
-
-    def __init__(self, connection, id=None, actors=None):
-        self.connection = connection
-        self.id = id or uuid()
-        if actors is not None:
-            self.actors = actors
-        self.actors = self.prepare_actors()
-
-    def on_run(self):
-        pass
-
-    def run(self):
-        self.info('Agent on behalf of [%s] starting...',
-                  ', '.join(actor.name for actor in self.actors))
-        self.on_run()
-        super(Agent, self).run()
-
-    def stop(self):
-        pass
-
-    def on_consume_ready(self, *args, **kwargs):
-        for actor in self.actors:
-            actor.on_agent_ready()
-
-    def run_from_commandline(self, loglevel='INFO', logfile=None):
-        setup_logging(loglevel, logfile)
-        try:
-            self.run()
-        except KeyboardInterrupt:
-            self.info('[Quit requested by user]')
-
-    def _maybe_actor(self, actor):
-        if isclass(actor):
-            return actor(self.connection)
-        return actor
-
-    def prepare_actors(self):
-        return [self._maybe_actor(actor).bind(self.connection, self)
-                for actor in self.actors]
-
-    def get_consumers(self, Consumer, channel):
-        return [actor.Consumer(channel) for actor in self.actors]
-
-    def get_default_scatter_limit(self, actor):
         return None
