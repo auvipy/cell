@@ -18,6 +18,8 @@ __all__ = ['Agent', 'dAgent']
 logger = get_logger(__name__)
 debug, warn, error = logger.debug, logger.warn, logger.error
 from operator import itemgetter
+
+
 class dAgent(Actor):
     types = (ACTOR_TYPE.RR, ACTOR_TYPE.SCATTER)
 
@@ -110,7 +112,7 @@ class dAgent(Actor):
         res = self.call('spawn', {'cls': name, 'id': actor_id,
                                   'kwargs': kwargs},
                         type=ACTOR_TYPE.RR, nowait=nowait)
-        return ActorProxy(name, actor_id, res, agent = self,
+        return ActorProxy(name, actor_id, res, agent=self,
                           connection=self.connection, **kwargs)
 
     def select(self, cls, **kwargs):
@@ -176,6 +178,7 @@ class dAgent(Actor):
 
     def get_default_scatter_limit(self):
         return None
+
 
 class Agent(ConsumerMixin):
     actors = []

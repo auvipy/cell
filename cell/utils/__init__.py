@@ -79,6 +79,7 @@ def qualname(obj):  # noqa
         obj = obj.__class__
     return '%s.%s' % (obj.__module__, obj.__name__)
 
+
 def first_reply(replies, key):
     try:
         return replies.next()

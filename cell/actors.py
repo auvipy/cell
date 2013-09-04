@@ -19,7 +19,6 @@ from kombu.utils.encoding import safe_repr
 from . import __version__
 from . import exceptions
 from cell.exceptions import WrongNumberOfArguments
-from cell.utils import qualname
 from .results import AsyncResult
 from .utils import cached_property, enum, shortuuid, setattr_default
 
@@ -517,7 +516,8 @@ class Actor(object):
 
         if 'limit' not in kwargs and self.agent:
             kwargs['limit'] = self.agent.get_default_scatter_limit()
-            if not kwargs['limit']: kwargs.setdefault('ignore_timeout', False)
+            if not kwargs['limit']:
+                kwargs.setdefault('ignore_timeout', False)
 
         return collect_replies(conn, channel, self.get_reply_queue(ticket),
                                *args, **kwargs)
@@ -697,10 +697,11 @@ class ActorProxy(object):
                     *args[1:], **kw)
             else:
                 raise WrongNumberOfArguments(
-                    'No arguments given to %s' %self.func)
+                    'No arguments given to %s' % self.func)
 
         def __getattr__(self, name):
-            return  partial(self.func, getattr(self.parent.state, name).__name__)
+            return partial(
+                self.func, getattr(self.parent.state, name).__name__)
 
     @cached_property
     def call(self):
@@ -717,7 +718,6 @@ class ActorProxy(object):
     @cached_property
     def scatter(self):
             return self.state(self._actor, self.id, self._actor.scatter)
-
 
     def __getattr__(self, name):
             return getattr(self._actor, name)

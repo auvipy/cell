@@ -3,7 +3,7 @@ import ast
 
 from kombu import Connection
 from kombu.common import uuid, maybe_declare
-from mock import patch, ANY, MagicMock
+from mock import patch, ANY
 from cell.actors import Actor, ActorProxy
 from cell.exceptions import WrongNumberOfArguments
 from cell.results import AsyncResult
@@ -14,6 +14,7 @@ from kombu.entity import Exchange
 from kombu.exceptions import StdChannelError
 from kombu.messaging import Consumer
 from cell.utils import qualname
+
 
 class A(Actor):
     pass
@@ -686,7 +687,7 @@ class test_Actor(Case):
                                          A.__class__.__name__)
         a = A()
         a.agent = Mock()
-        result = a.on_message(body, message)
+        a.on_message(body, message)
 
         a.agent.process_message.assert_called_once_with(a, body, message)
 
@@ -982,7 +983,6 @@ class test_Actor(Case):
                                                     routing_key=routing_key)
 
 
-
 class As(Actor):
     class state():
         def foo(self, who=None):
@@ -990,6 +990,7 @@ class As(Actor):
 
     def meth(self):
         pass
+
 
 class test_ActorProxy(Case):
 
@@ -1009,7 +1010,7 @@ class test_ActorProxy(Case):
         self.assertEqual(a1._actor.id, a1.id)
         self.assertEqual(a1._actor.connection, conn)
 
-        a1 = ActorProxy(qualname(A), id, res, connection = conn, agent = ag)
+        a1 = ActorProxy(qualname(A), id, res, connection=conn, agent=ag)
 
         self.assertEqual(a1.id, id)
         self.assertEqual(a1.async_start_result, res)
@@ -1020,13 +1021,15 @@ class test_ActorProxy(Case):
         self.assertEqual(a1._actor.connection, conn)
 
     def assert_actor_method_called(self, meth, func):
-        args, kwargs = ['foo',  {'who':'the quick brown...'}], {'nowait':True}
+        args,  = ['foo', {'who': 'the quick brown...'}]
+        kwargs = {'nowait': True}
 
         func(*args, **kwargs)
 
         meth.assert_called_once_with(*args, **kwargs)
 
-        args, kwargs = ['bar',  {'who':'the quick brown...'}], {'nowait':True}
+        args = ['bar', {'who': 'the quick brown...'}]
+        kwargs = {'nowait': True}
 
         with self.assertRaises(AttributeError):
             func(*args, **kwargs)
@@ -1037,7 +1040,7 @@ class test_ActorProxy(Case):
     def assert_actor_method_called_with_par_foo(
             self, mock_meth, func):
 
-        args, kwargs = [{'who':'the quick brown...'}], {'nowait':True}
+        args, kwargs = [{'who': 'the quick brown...'}], {'nowait': True}
 
         func.foo(*args, **kwargs)
 
@@ -1103,5 +1106,3 @@ class test_ActorProxy(Case):
         a1 = ActorProxy(qualname(As), uuid())
         with self.assertRaises(AttributeError):
             a1.bar()
-
-

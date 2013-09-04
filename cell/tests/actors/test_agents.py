@@ -13,6 +13,7 @@ class dA(dAgent):
 class A(Actor):
     pass
 
+
 class test_dAgent(Case):
 
     @patch('cell.actors.Actor')
@@ -61,17 +62,17 @@ class test_dAgent(Case):
 
         warn.assert_called_once_with(ANY, a1.id)
 
-
     @with_in_memory_connection
     @patch('cell.agents.error', return_value=Mock())
     def test_state_spawn_when_error_occurs(self, conn, error):
         ag, a1 = dA(conn), A(conn)
         ag.state.registry[a1.id] = a1
-        ag.state._start_actor_consumer = Mock(side_effect=Exception('FooError'))
+        ag.state._start_actor_consumer = Mock(
+            side_effect=Exception('FooError'))
 
         ag.state.spawn(qualname(a1), a1.id)
         error.called_once_with('Cannot start actor: %r',
-                                             Exception('FooError'), ANY)
+                               Exception('FooError'), ANY)
 
         ag.state._start_actor_consumer.reset_mock()
         ag.state._start_actor_consumer = Mock()
@@ -189,17 +190,18 @@ class test_dAgent(Case):
     @with_in_memory_connection
     def test_select_returns_scatter_results(self, conn):
         id1, id2 = uuid(), uuid()
+
         def scatter_result():
             yield id1
             yield id2
-        # returns id if it is started
+
         ag = dAgent(conn)
-        ag.scatter = Mock(return_value = scatter_result())
+        ag.scatter = Mock(return_value=scatter_result())
 
         proxy = ag.select(A)
 
         ag.scatter.assert_called_once_with(
-            'select', {'cls':qualname(A)}, limit=1)
+            'select', {'cls': qualname(A)}, limit=1)
 
         # Check ActorProxy initialisation
         self.assertIsInstance(proxy, ActorProxy)
@@ -212,17 +214,17 @@ class test_dAgent(Case):
 
     @with_in_memory_connection
     def test_select_returns_error_when_no_result_found(self, conn):
-        id1, id2 = uuid(), uuid()
+
         def scatter_result():
             yield None
-        # returns id if it is started
+
         gen = scatter_result()
         gen.next()
         ag = dAgent(conn)
-        ag.scatter = Mock(return_value = gen)
+        ag.scatter = Mock(return_value=gen)
 
         with self.assertRaises(KeyError):
-           ag.select(A)
+            ag.select(A)
 
     @with_in_memory_connection
     def test_state_select_returns_from_registry(self, conn):
@@ -245,7 +247,6 @@ class test_dAgent(Case):
         keyB = ag.state.select(qualname(B))
         self.assertEqual(keyA, id1)
         self.assertEqual(keyB, id2)
-
 
     @with_in_memory_connection
     def test_messages_processing_when_greenlets_are_enabled(self, conn):
@@ -271,7 +272,7 @@ class test_dAgent(Case):
 
     @with_in_memory_connection
     def test_message_processing_when_greenlets_are_disabled(self, conn):
-        ag= dAgent(conn)
+        ag = dAgent(conn)
         ag.pool = Mock()
         al = Mock()
         ag.pool.is_green = False
@@ -292,7 +293,7 @@ class test_dAgent(Case):
 
         ag, al = dAgent(conn), A(conn)
         ag.pool = Mock()
-        al._on_message  = Mock()
+        al._on_message = Mock()
         body, message = Mock(), Mock()
 
         # warning is not triggered when greenlets are disabled
