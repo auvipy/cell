@@ -1,5 +1,5 @@
 =========================
- cell - Actors for Kombu
+ cell - Actors for Celery
 =========================
 
 Contents:
