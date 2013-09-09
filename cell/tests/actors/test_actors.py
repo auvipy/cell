@@ -1021,7 +1021,7 @@ class test_ActorProxy(Case):
         self.assertEqual(a1._actor.connection, conn)
 
     def assert_actor_method_called(self, meth, func):
-        args  = ['foo', {'who': 'the quick brown...'}]
+        args = ['foo', {'who': 'the quick brown...'}]
         kwargs = {'nowait': True}
 
         func(*args, **kwargs)

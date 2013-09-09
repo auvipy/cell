@@ -463,7 +463,7 @@ class Actor(object):
         try:
             r = self._DISPATCH(body, ticket=message.properties['reply_to'])
         except self.Next:
-            # don't reply, delegate to other agent.
+            # don't reply, delegate to other agents.
             pass
         else:
             #callback = message.properties['callback']
@@ -516,8 +516,8 @@ class Actor(object):
 
         if 'limit' not in kwargs and self.agent:
             kwargs['limit'] = self.agent.get_default_scatter_limit()
-            if not kwargs['limit']:
-                kwargs.setdefault('ignore_timeout', False)
+        if 'ignore_timeout' not in kwargs and not kwargs.get('limit', None):
+            kwargs.setdefault('ignore_timeout', False)
 
         return collect_replies(conn, channel, self.get_reply_queue(ticket),
                                *args, **kwargs)
