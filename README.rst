@@ -46,7 +46,7 @@ In a nutshell:
 * Easy learning curve (check teh 30 sec video to get you started)
 
 if you are a celery user:
-~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 * You can use Actors, instead of task-based classes:
 (You can program with classes and not tasks)
 
@@ -54,19 +54,14 @@ if you are a celery user:
 You can control the execution per actor/not per worker.
 
 * Better control over work distribution (You can target the same worker for a given task):
-In celery you cannot force the same worker to execute the same task
-.. code-block::
 
-    add(2, 2)
-    add(2, 2)
-With cell, you can:you have different routers that give you control over who is receiving your messages:
-.. code-block::
+.. code-block:: python
 
     adder.send.add(2, 2)
     adder.send.add(2, 2)
 
 .. If you are an actor frameworks user:
-.. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. -----------------------------------
 
 .. Cell supports different routers, distributed actors, supervision strategies (retry, exceptions).
 .. Typing actors, workflows with actors and checks on the workflow.
@@ -75,7 +70,7 @@ With cell, you can:you have different routers that give you control over who is 
 .. Flexible configuration: (with actors you can implement routing behaviour that is needed)
 
 If you are a general Pythonist
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------
 Having a framework for distributed actor management in your toolbox is a must, bacause:
 
 * simplify the distributed processing of tasks.
