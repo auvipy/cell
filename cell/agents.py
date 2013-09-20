@@ -21,7 +21,8 @@ from operator import itemgetter
 
 
 class dAgent(Actor):
-    types = (ACTOR_TYPE.RR, ACTOR_TYPE.SCATTER)
+    types = (ACTOR_TYPE.RR, ACTOR_TYPE.SCATTER, ACTOR_TYPE.DIRECT)
+    MAX_ACTORS = 2
 
     class state(object):
         def __init__(self):
@@ -37,6 +38,8 @@ class dAgent(Actor):
         def spawn(self, cls, id, kwargs={}):
             """Add actor to the registry and start the actor's main method."""
             try:
+                print 'In scope spawn The kwargs are', kwargs
+
                 actor = symbol_by_name(cls)(
                     connection=self.connection, id=id, **kwargs)
 
@@ -60,6 +63,7 @@ class dAgent(Actor):
                 self._start_actor_consumer(actor)
 
         def kill(self, actor_id):
+            print 'Actor is killed'
             if actor_id not in self.registry:
                 raise Actor.Next()
             else:
@@ -92,6 +96,10 @@ class dAgent(Actor):
         self.registry = {}
         Actor.__init__(self, connection=connection, id=id, agent=self)
 
+    def spawn_group(self, group, cls, n=1, nowait=False):
+        return self.spawn(
+            group, {'act_type': qualname(cls), 'number': n}, nowait)
+
     def spawn(self, cls, kwargs={}, nowait=False):
         """Spawn a new actor on a celery worker by sending
         a remote command to the worker.
@@ -108,7 +116,14 @@ class dAgent(Actor):
         """
 
         actor_id = uuid()
-        name = qualname(cls)
+
+        if str(qualname(cls)) == '__builtin__.unicode':
+            name = cls
+        else:
+            name = qualname(cls)
+
+        print 'In spawn, name is:%s %s %s' % (isinstance(cls, str), cls, name)
+        print 'In spawn, the kwargs are:', kwargs
         res = self.call('spawn', {'cls': name, 'id': actor_id,
                                   'kwargs': kwargs},
                         type=ACTOR_TYPE.RR, nowait=nowait)

@@ -20,15 +20,17 @@ class AsyncResult(object):
         self._result = None
 
     def _first(self, replies):
+        print 'Replies is:', replies
         if replies is not None:
             replies = list(replies)
+            print 'List Replies is:', replies
             if replies:
                 return replies[0]
         raise self.NoReplyError('No reply received within time constraint')
 
-    def result(self):
+    def result(self, **kwargs):
         if not self._result:
-            self._result = self.get()
+            self._result = self.get(**kwargs)
         return self._result
 
     def get(self, **kwargs):
@@ -43,9 +45,10 @@ class AsyncResult(object):
         # test collect_replies separately
         connection = self.actor.connection
         gather = self._gather
-        for r in gather(connection, connection.channel(), self.ticket,
-                        propagate=propagate, **kwargs):
-            yield r
+        with producers[connection].acquire(block=True) as producer:
+            for r in gather(producer.connection, producer.channel, self.ticket,
+                            propagate=propagate, **kwargs):
+                yield r
 
     def _gather(self, *args, **kwargs):
         """Generator over the results

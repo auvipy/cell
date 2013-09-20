@@ -93,8 +93,12 @@ class GuardedActor(WorkflowActor):
 
 class Printer(GuardedActor):
     types = ('scatter', 'round-robin', 'direct')
+    def __init__(self, **kwargs):
+        super(Printer, self).__init__(**kwargs)
+
 
     class state(GuardedActor.state):
+
         def do_smth(self):
             print 'I am a printer'
 
@@ -178,6 +182,8 @@ class FilterExample:
         wf = Workflow([filter1, filter2, printer, logger, collector])
         [filter1, filter2, printer, logger, collector] = list(wf.start())
         print 'collector_id after start:' + collector.id
+
+
 
         time.sleep(2)
 
