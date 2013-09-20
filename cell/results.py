@@ -20,10 +20,8 @@ class AsyncResult(object):
         self._result = None
 
     def _first(self, replies):
-        print 'Replies is:', replies
         if replies is not None:
             replies = list(replies)
-            print 'List Replies is:', replies
             if replies:
                 return replies[0]
         raise self.NoReplyError('No reply received within time constraint')

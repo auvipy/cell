@@ -92,7 +92,7 @@ class Actor(object):
 
     #: Default timeout in seconds as a float which after
     #: we give up waiting for replies.
-    default_timeout = 10.0
+    default_timeout = 5.0
 
     #: Time in seconds as a float which after replies expires.
     reply_expires = 100.0
@@ -190,12 +190,9 @@ class Actor(object):
 
     def _add_binding(self, source, routing_key='',
                      inbox_type=ACTOR_TYPE.DIRECT):
-        print 'Received'
         source_exchange = Exchange(**source)
         binder = self.get_binder(inbox_type)
         maybe_declare(source_exchange, self.connection.default_channel)
-        print 'source entity is', source_exchange
-        print 'routing key is', source_exchange
         binder(exchange=source_exchange, routing_key=routing_key)
 
     def _remove_binding(self, source, routing_key='',
@@ -214,7 +211,6 @@ class Actor(object):
         binder = entity.bind_to
         #@TODO: Declare probably should not happened here
         entity.maybe_bind(self.connection.default_channel)
-        print 'destination entity is', entity
         maybe_declare(entity, entity.channel)
         return binder
 
@@ -231,7 +227,6 @@ class Actor(object):
 
     def add_binding(self, source, routing_key='',
                     inbox_type=ACTOR_TYPE.DIRECT):
-        print 'Calling add_binding'
         self.call('add_binding', {
             'source': source.as_dict(),
             'routing_key': routing_key,
@@ -469,7 +464,6 @@ class Actor(object):
         self.cast(method, args, before,
                   **dict(props, reply_to=ticket))
 
-        print 'Reading from queue', ticket
         return self.AsyncResult(ticket, self)
 
     def handle_cast(self, body, message):
@@ -543,8 +537,6 @@ class Actor(object):
 
     def lookup_action(self, name):
         try:
-            print 'The type of the actor', self.__class__.__name__
-            print 'The method is', name
             if not name:
                 method = self.default_receive
             else:
@@ -701,7 +693,6 @@ class ActorProxy(object):
 
     def __init__(self, name, id, async_start_result=None, **kwargs):
         kwargs.update({'id': id})
-        print 'The kwargs are', kwargs
         self._actor = symbol_by_name(name)(**kwargs)
         self.id = self._actor.id
         self.async_start_result = async_start_result
@@ -750,5 +741,4 @@ class ActorProxy(object):
 
     # Notify when the actor is started
     def wait_to_start(self, **kwargs):
-        print 'The Async ticket is', self.async_start_result.ticket
         return self.async_start_result.result(**kwargs)

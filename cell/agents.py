@@ -38,8 +38,6 @@ class dAgent(Actor):
         def spawn(self, cls, id, kwargs={}):
             """Add actor to the registry and start the actor's main method."""
             try:
-                print 'In scope spawn The kwargs are', kwargs
-
                 actor = symbol_by_name(cls)(
                     connection=self.connection, id=id, **kwargs)
 
@@ -63,7 +61,6 @@ class dAgent(Actor):
                 self._start_actor_consumer(actor)
 
         def kill(self, actor_id):
-            print 'Actor is killed'
             if actor_id not in self.registry:
                 raise Actor.Next()
             else:
@@ -122,8 +119,6 @@ class dAgent(Actor):
         else:
             name = qualname(cls)
 
-        print 'In spawn, name is:%s %s %s' % (isinstance(cls, str), cls, name)
-        print 'In spawn, the kwargs are:', kwargs
         res = self.call('spawn', {'cls': name, 'id': actor_id,
                                   'kwargs': kwargs},
                         type=ACTOR_TYPE.RR, nowait=nowait)
