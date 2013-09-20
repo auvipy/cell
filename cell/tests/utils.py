@@ -28,7 +28,19 @@ import mock
 from nose import SkipTest
 from kombu.utils import nested
 
-from kombu.utils.compat import WhateverIO
+is_py3k = sys.version_info[0] == 3
+
+if is_py3k:                                 # pragma: no cover
+    from io import StringIO, BytesIO
+    from .encoding import bytes_to_str
+
+    class WhateverIO(StringIO):
+
+        def write(self, data):
+            StringIO.write(self, bytes_to_str(data))
+else:
+    from StringIO import StringIO           # noqa
+    BytesIO = WhateverIO = StringIO         # noqa
 
 
 class Mock(mock.Mock):
