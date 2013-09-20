@@ -21,6 +21,7 @@ from . import exceptions
 from cell.exceptions import WrongNumberOfArguments
 from .results import AsyncResult
 from .utils import cached_property, enum, shortuuid, setattr_default
+import time
 
 __all__ = ['Actor']
 BUILTIN_FIELDS = {'ver': __version__}
@@ -91,7 +92,7 @@ class Actor(object):
 
     #: Default timeout in seconds as a float which after
     #: we give up waiting for replies.
-    default_timeout = 5.0
+    default_timeout = 10.0
 
     #: Time in seconds as a float which after replies expires.
     reply_expires = 100.0
@@ -111,6 +112,11 @@ class Actor(object):
     #: Should we retry publishing messages by default?
     #: Default: NO
     retry = None
+
+    #: time-to-live for the actor before becoming Idle
+    ttl = 20
+
+    idle = 40
 
     #: Default policy used when retrying publishing messages.
     #: see :meth:`kombu.BrokerConnection.ensure` for a list
@@ -141,7 +147,8 @@ class Actor(object):
         pass
 
     def __init__(self, connection=None, id=None, name=None, exchange=None,
-                 logger=None, agent=None, outbox_exchange=None, **kwargs):
+                 logger=None, agent=None, outbox_exchange=None,
+                 group_exchange=None,  **kwargs):
         self.connection = connection
         self.id = id or uuid()
         self.name = name or self.name or self.__class__.__name__
@@ -153,6 +160,9 @@ class Actor(object):
 
         # - setup exchanges and queues
         self.exchange = exchange or self.get_direct_exchange()
+        if group_exchange:
+            self._scatter_exchange = Exchange(
+                group_exchange, 'fanout', auto_delete=True)
 
         typemap = {
             ACTOR_TYPE.DIRECT: [self.get_direct_queue, self._inbox_direct],
@@ -173,15 +183,19 @@ class Actor(object):
             logger_name = '%s#%s' % (self.name, shortuuid(self.id))
         self.log = Log('!<%s>' % logger_name, logger=logger)
         self.state = self.contribute_to_state(self.construct_state())
+        self.timestamp = time.time()
 
         # actor specific initialization.
         self.construct()
 
     def _add_binding(self, source, routing_key='',
                      inbox_type=ACTOR_TYPE.DIRECT):
+        print 'Received'
         source_exchange = Exchange(**source)
         binder = self.get_binder(inbox_type)
         maybe_declare(source_exchange, self.connection.default_channel)
+        print 'source entity is', source_exchange
+        print 'routing key is', source_exchange
         binder(exchange=source_exchange, routing_key=routing_key)
 
     def _remove_binding(self, source, routing_key='',
@@ -200,6 +214,7 @@ class Actor(object):
         binder = entity.bind_to
         #@TODO: Declare probably should not happened here
         entity.maybe_bind(self.connection.default_channel)
+        print 'destination entity is', entity
         maybe_declare(entity, entity.channel)
         return binder
 
@@ -216,7 +231,7 @@ class Actor(object):
 
     def add_binding(self, source, routing_key='',
                     inbox_type=ACTOR_TYPE.DIRECT):
-
+        print 'Calling add_binding'
         self.call('add_binding', {
             'source': source.as_dict(),
             'routing_key': routing_key,
@@ -298,7 +313,7 @@ class Actor(object):
         r = self.call_or_cast(method, args, type=ACTOR_TYPE.RR,
                               nowait=nowait, **kwargs)
         if not nowait:
-            return r.get()
+            return r
 
     def scatter(self, method, args={}, nowait=False, **kwargs):
         """Broadcast method to all agents.
@@ -364,16 +379,17 @@ class Actor(object):
 
     def get_scatter_exchange(self):
         """Returns a :class:'kombu.Exchange' for type fanout"""
-        return Exchange('cl.scatter.%s' % self.name, 'fanout')
+        return Exchange('cl.scatter.%s' % self.name, 'fanout',
+                        auto_delete=True)
 
     def get_rr_exchange(self):
         """Returns a :class:'kombu.Exchange' instance with type set to fanout.
          The exchange is used for sending in a round-robin style"""
-        return Exchange('cl.rr.%s' % self.name, 'fanout')
+        return Exchange('cl.rr.%s' % self.name, 'fanout', auto_delete=True)
 
     def get_direct_exchange(self):
         """Returns a :class:'kombu.Exchange' with type direct"""
-        return Exchange('cl.%s' % self.name, 'direct')
+        return Exchange('cl.%s' % self.name, 'direct', auto_delete=True)
 
     def get_queues(self):
         return [self.type_to_queue[type]() for type in self.types]
@@ -452,6 +468,8 @@ class Actor(object):
 
         self.cast(method, args, before,
                   **dict(props, reply_to=ticket))
+
+        print 'Reading from queue', ticket
         return self.AsyncResult(ticket, self)
 
     def handle_cast(self, body, message):
@@ -478,6 +496,7 @@ class Actor(object):
                            self.reply_exchange, req, body, props)
 
     def on_message(self, body, message):
+        self.timestamp = time.time()
         self.agent.process_message(self, body, message)
 
     def _on_message(self, body, message):
@@ -524,6 +543,8 @@ class Actor(object):
 
     def lookup_action(self, name):
         try:
+            print 'The type of the actor', self.__class__.__name__
+            print 'The method is', name
             if not name:
                 method = self.default_receive
             else:
@@ -680,6 +701,7 @@ class ActorProxy(object):
 
     def __init__(self, name, id, async_start_result=None, **kwargs):
         kwargs.update({'id': id})
+        print 'The kwargs are', kwargs
         self._actor = symbol_by_name(name)(**kwargs)
         self.id = self._actor.id
         self.async_start_result = async_start_result
@@ -691,17 +713,21 @@ class ActorProxy(object):
             self.func = func
 
         def __call__(self, *args, **kw):
-            if args:
-                return self.func(
-                    getattr(self.parent.state, args[0]).__name__,
-                    *args[1:], **kw)
-            else:
+            if not args:
                 raise WrongNumberOfArguments(
                     'No arguments given to %s' % self.func)
+            try:
+                meth = getattr(self.parent.state, args[0]).__name__
+            except AttributeError:
+                if kw.get('typed', True):
+                    raise
+                else:
+                    meth = args[0]
+            return self.func(meth, *args[1:], **kw)
 
         def __getattr__(self, name):
-            return partial(
-                self.func, getattr(self.parent.state, name).__name__)
+                return partial(
+                    self.func, getattr(self.parent.state, name).__name__)
 
     @cached_property
     def call(self):
@@ -723,5 +749,6 @@ class ActorProxy(object):
             return getattr(self._actor, name)
 
     # Notify when the actor is started
-    def wait_to_start(self):
-        self.async_start_result._result
+    def wait_to_start(self, **kwargs):
+        print 'The Async ticket is', self.async_start_result.ticket
+        return self.async_start_result.result(**kwargs)

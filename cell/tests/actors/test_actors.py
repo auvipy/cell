@@ -180,6 +180,7 @@ class test_Actor(Case):
         a = A()
         a.call_or_cast = Mock(return_value=Mock())
         a.call_or_cast.return_value.get = Mock(return_value=return_val)
+        a.call_or_cast.return_value.result = Mock(return_value=return_val)
 
         # when throw is invoked,
         # all its arguments are passed to call_ot_cast and result is returned
@@ -187,7 +188,7 @@ class test_Actor(Case):
         a.call_or_cast.assert_called_once_with(method, args,
                                                type=ACTOR_TYPE.RR,
                                                nowait=False)
-        self.assertEquals(result, return_val)
+        self.assertEquals(result.result(), return_val)
         a.call_or_cast.reset_mock()
 
         # when throw is invoked with no_wait=True, no result is returned
@@ -1031,6 +1032,7 @@ class test_ActorProxy(Case):
         args = ['bar', {'who': 'the quick brown...'}]
         kwargs = {'nowait': True}
 
+        # bar method is not supported so error is thorwm
         with self.assertRaises(AttributeError):
             func(*args, **kwargs)
 
