@@ -35,7 +35,7 @@ class test_dAgent(Case):
 
         ag.cast.assert_called_once_with(
             'kill', {'actor_id': static_id},
-            ANY, reply_to=ANY, type=ACTOR_TYPE.SCATTER,
+            reply_to=ANY, type=ACTOR_TYPE.SCATTER, declare=ANY,
             timeout=ag.default_timeout)
 
     @with_in_memory_connection
@@ -97,7 +97,7 @@ class test_dAgent(Case):
             'spawn',
             {'cls': qualname(a), 'id': actor_static_id.return_value,
              'kwargs': {}},
-            ANY, reply_to=ticket_static_id.return_value,
+            reply_to=ticket_static_id.return_value, declare=ANY,
             type=ACTOR_TYPE.RR, nowait=False)
 
         # Check ActorProxy initialisation

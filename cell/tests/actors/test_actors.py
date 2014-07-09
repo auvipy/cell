@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 import ast
 
+from amqp import ChannelError
 from kombu import Connection
 from kombu.common import uuid, maybe_declare
 from mock import patch, ANY
@@ -11,7 +12,6 @@ from cell.tests.utils import Case, Mock, with_in_memory_connection
 from cell.actors import ACTOR_TYPE
 from kombu.compression import compress
 from kombu.entity import Exchange
-from kombu.exceptions import StdChannelError
 from kombu.messaging import Consumer
 from cell.utils import qualname
 
@@ -349,7 +349,7 @@ class test_Actor(Case):
         # cast is invoked with correct reply_to argument
         res = a.call(dummy_method, dummy_args)
         self.assertTrue(a.cast.called)
-        (method, args, _), kwargs = a.cast.call_args
+        (method, args), kwargs = a.cast.call_args
         self.assertEqual(method, dummy_method)
         self.assertEqual(args, dummy_args)
         self.assertDictContainsSubset({'reply_to': ticket}, kwargs)
@@ -843,7 +843,7 @@ class test_Actor(Case):
             reply_q = a.get_reply_queue(ticket)
             a.get_reply_queue = Mock(return_value=reply_q)
 
-            with self.assertRaises(StdChannelError):
+            with self.assertRaises(ChannelError):
                 reply_q(conn.channel()).queue_declare(passive=True)
 
             a.call(method='foo', args={}, type=ACTOR_TYPE.DIRECT)

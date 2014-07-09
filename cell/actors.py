@@ -9,12 +9,13 @@ from itertools import count
 from operator import itemgetter
 
 from kombu import Consumer, Exchange, Queue
-from kombu.common import (collect_replies, ipublish, isend_reply,
-                          maybe_declare, uuid)
+from kombu.common import collect_replies, maybe_declare, uuid
 from kombu.log import Log
+from kombu import serialization
 from kombu.pools import producers
 from kombu.utils import kwdict, reprcall, reprkwargs, symbol_by_name
 from kombu.utils.encoding import safe_repr
+from kombu.utils.functional import maybe_list
 
 from . import __version__
 from . import exceptions
@@ -418,16 +419,10 @@ class Actor(object):
         return Consumer(channel, self.get_queues(),
                         callbacks=[self.on_message], **kwargs)
 
-    def _publish(self, body, producer, before=None, **props):
-        if before is not None:
-            before(producer.connection, producer.channel)
-        maybe_declare(props['exchange'], producer.channel)
-        return producer.publish(body, **props)
-
     def emit(self, method, args={}, retry=None):
         return self.cast(method, args, retry=retry, exchange=self.outbox)
 
-    def cast(self, method, args={}, before=None, retry=None,
+    def cast(self, method, args={}, declare=None, retry=None,
              retry_policy=None, type=None, exchange=None, **props):
         """Send message to actor.  Discarding replies."""
         retry = self.retry if retry is None else retry
@@ -447,23 +442,17 @@ class Actor(object):
         props.setdefault('routing_key', self.routing_key)
         props.setdefault('serializer', self.serializer)
         exchange = exchange or self.type_to_exchange[type]()
-        #debug('exchange we are sending to is:', exchange.name)
-        props = dict(props, exchange=exchange, before=before)
-        ipublish(producers[self._connection], self._publish,
-                 (body, ), dict(props, exchange=exchange, before=before),
-                 **(retry_policy or {}))
-
-    def call(self, method, args={}, retry=False, retry_policy=None, **props):
+        declare = (maybe_list(declare) or []) + [exchange]
+        with producers[self._connection].acquire(block=True) as producer:
+            return producer.publish(body, exchange=exchange, declare=declare,
+                                    retry=retry, retry_policy=retry_policy,
+                                    **props)
+    def call(self, method, args={}, retry=False, retry_policy=None,
+             ticket=None, **props):
         """Send message to the same actor and return :class:`AsyncResult`."""
-        ticket = uuid()
+        ticket = ticket or uuid()
         reply_q = self.get_reply_queue(ticket)
-
-        def before(connection, channel):
-            reply_q(channel).declare()
-
-        self.cast(method, args, before,
-                  **dict(props, reply_to=ticket))
-
+        self.cast(method, args, declare=[reply_q], reply_to=ticket, **props)
         return self.AsyncResult(ticket, self)
 
     def handle_cast(self, body, message):
@@ -486,8 +475,17 @@ class Actor(object):
             self.reply(message, r)
 
     def reply(self, req, body, **props):
-        return isend_reply(producers[self._connection],
-                           self.reply_exchange, req, body, props)
+        with producers[self._connection].acquire(block=True) as producer:
+            content_type = req.content_type
+            serializer = serialization.registry.type_to_name[content_type]
+            return producer.publish(
+                body,
+                declare=[self.reply_exchange],
+                routing_key=req.properties['reply_to'],
+                correlation_id=req.properties.get('correlation_id'),
+                serializer=serializer,
+                **props
+            )
 
     def on_message(self, body, message):
         self.timestamp = time.time()
