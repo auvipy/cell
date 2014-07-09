@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from mock import patch, Mock, ANY
 from cell.actors import Actor, ActorProxy, ACTOR_TYPE
 from cell.agents import dAgent
@@ -231,7 +233,7 @@ class test_dAgent(Case):
         class B(Actor):
             pass
 
-        ag, al = dAgent(conn), A(conn)
+        ag = dAgent(conn)
         id1, id2 = uuid(), uuid()
 
         with self.assertRaises(Actor.Next):
@@ -318,7 +320,8 @@ class test_dAgent(Case):
         message.properties = {'reply_to': '1234'}
         ag.process_message(al, body, message)
         warn.assert_called_once_with(
-            'Starting a blocking call (%s) on actor (%s) when greenlets are disabled.',
+            'Starting a blocking call (%s) on actor (%s) '
+            'when greenlets are disabled.',
             ANY, al.__class__)
 
         cell.agents.itemgetter.called_once_with('method')

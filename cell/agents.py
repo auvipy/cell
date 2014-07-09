@@ -101,15 +101,18 @@ class dAgent(Actor):
         """Spawn a new actor on a celery worker by sending
         a remote command to the worker.
 
-        :keyword actor_class: the name of the class :class:`~.cell.actors.Actor` or its derivative
+        :param cls: the name of the :class:`~.cell.actors.Actor` class or its
+                    derivative.
 
-        :keyword kwargs: The keyword arguments to pass on to the
+        :keyword kwargs: The keyword arguments to pass on to
                          actor __init__ (a :class:`dict`)
 
-        :keyword nowait: If set to True (default) the call waits for the result of spawning the actor.
-                         if False, the spawning is asynchronous.
+        :keyword nowait: If set to True (default) the call waits for the
+                         result of spawning the actor.  if False, the spawning
+                         is asynchronous.
 
-        :returns :class:`~.cell.actors.ActorProxy`, holding the id of the spawned actor.
+        :returns :class:`~.cell.actors.ActorProxy`:,
+            holding the id of the spawned actor.
         """
 
         actor_id = uuid()
@@ -179,7 +182,8 @@ class dAgent(Actor):
             self.pool.spawn_n(actor._on_message, body, message)
         else:
             if not self.is_green() and message.properties.get('reply_to'):
-                warn('Starting a blocking call (%s) on actor (%s) when greenlets are disabled.',
+                warn('Starting a blocking call (%s) on actor (%s) '
+                     'when greenlets are disabled.',
                      itemgetter('method')(body), actor.__class__)
             actor._on_message(body, message)
 

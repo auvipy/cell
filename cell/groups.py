@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from cell.actors import Actor
 from cell.agents import dAgent
 from kombu.entity import Exchange
@@ -9,16 +11,18 @@ class Group(Actor):
     """Convenience class used to spawn group of actors of the same type.
 
     **Example usage**
-     Here is how we can spawn two group, each of 10 actors of type py:class:'Logger'
+     Here we spawn two groups, of 10 :class:`Logger` actors each.
 
     .. code-block:: python
+
         >>> exception_group = agent.spawn(Group, Logger, 10)
         >>> warning_group = agent.spawn(Group, Logger, 10)
         >>> exception_group.scatter('log_msg', 'some exception msg...')
         >>> warning_group.scatter('log_msg', 'some exception msg...')
 
-    :keyword act_type: the type of actor
-    :keyword number: the number of actor instances to be spawn
+    :param act_type: the actor to spawn.
+    :param number: the number of actor instances to spawn.
+
     """
     def __init__(self, act_type, number, **kwargs):
         super(Group, self).__init__(**kwargs)

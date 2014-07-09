@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from mock import ANY, patch
 from cell.actors import Actor
 from cell.agents import dAgent
@@ -65,9 +67,9 @@ class test_AsyncResuls(Case):
         ok_message = {'ok': 'the quick_brown_fox'}
         ares = self.get_async_result()
 
-        #------------------------------
+        # ------------------------------
         # reply is a successful message
-        #------------------------------
+        # ------------------------------
 
         # correct format
         res = ares.to_python(ok_message)
@@ -86,9 +88,9 @@ class test_AsyncResuls(Case):
         res = ares.to_python(ok_message)
         self.assertEqual(res, ok_message['ok'])
 
-        #---------------------------
+        # ---------------------------
         # reply is an error message
-        #---------------------------
+        # ---------------------------
 
         # correct error format with to propagate param set
         error_message = {'nok': [Exception('jump over')]}

@@ -58,22 +58,21 @@ class AsyncResult(object):
     def to_python(self, reply, propagate=True):
         """Extracts the value out of the reply message.
 
-        :param reply:
-        In the case of a successful call the reply message will
-        be::
-            {'ok': return_value, **default_fields}
+        :param reply: In the case of a successful call the reply message
+            will be::
 
-        Therefore the method returns: return_value, **default_fields
+                {'ok': return_value, **default_fields}
 
-        If the method raised an exception the reply message
-        will be::
+            Therefore the method returns: return_value, **default_fields
 
-            {'nok': [repr exc, str traceback], **default_fields}
+            If the method raises an exception the reply message
+            will be::
 
-        Depend on the
-        :keyword propagate - if set to False. the method returns
-         the error([repr exc, str traceback], **default_fields), If set to False
-        :raise Error - the error contained in teh reply message (only if propagate is False)
+                {'nok': [repr exc, str traceback], **default_fields}
+
+        :keyword propagate - Propagate exceptions raised instead of returning
+            a result representation of the error.
+
         """
         try:
             return reply['ok']

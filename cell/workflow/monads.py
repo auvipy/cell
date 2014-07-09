@@ -6,7 +6,7 @@ from collections import deque
 from functools import wraps
 from Queue import Queue
 
-###### Base Monad and @do syntax#########
+# ##### Base Monad and @do syntax #########
 
 
 class Monad(object):
@@ -104,7 +104,7 @@ def done(val):
 def fid(val):
     return val
 
-##### Failable Monad ######
+# #### Failable Monad ######
 
 
 class Failable(Monad):
@@ -137,7 +137,7 @@ class Failure(Failable):
         super(Success, self).__init__(self, value, True)
 
 
-###### StateChanger Monad #########
+# ##### StateChanger Monad #########
 
 
 class StateChanger(Monad):
@@ -171,7 +171,7 @@ def change_state(changer, view=fid):
         return viewed_state, new_state
     return StateChanger(make_new_state)
 
-###### Continuation Monad #########
+# ##### Continuation Monad #########
 
 
 class ContinuationMonad(Monad):
@@ -325,20 +325,20 @@ if __name__ == "__main__":
             for val in values:
                 mb.send(val)
 
-        #This is a multiplier flowlet
+        # This is a multiplier flowlet
         @do(ContinuationMonad)
         def multiply(mbin, mbout, factor):
             while 1:
                 val = (yield mbin.receive())
                 mbout.send(val * factor)
 
-        #This is a printer flowlet
+        # This is a printer flowlet
         @do(ContinuationMonad)
         def print_all(mb):
             while 1:
                 print(yield mb.receive())
 
-        #This is a flowlet for filtering
+        # This is a flowlet for filtering
         @do(ContinuationMonad)
         def filter(mbin, mbout, cond):
             print('Entering filter')
@@ -430,12 +430,10 @@ if __name__ == "__main__":
         sink = Mailbox()
         sink1 = Mailbox()
         sink2 = Mailbox()
-        #collector = Mailbox()
         waiter = Mailbox()
         val = creceive(sink1)
         print(val)
         # spawn an Actor on their behalf ... start doing it, cannot join here
-        #stimer = wf.start()
         execute(sink1, sink2, original)
         insert(original, [1, 2, 3])()
         multiply(original, multiplied, 3)()
@@ -469,4 +467,4 @@ if __name__ == "__main__":
                 mult.to(me).send(result)
                 # Note: we have data paralellism here,, not task parallelism
 
-                #inserter [1, 2, 3]| multiplier | printer
+                # inserter [1, 2, 3]| multiplier | printer

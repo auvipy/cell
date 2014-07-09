@@ -119,9 +119,10 @@ class test_Actor(Case):
             self.assertEqual(bound.exchange, a.exchange)
             self.assertEqual(bound.name, a.name)
             self.assertIsNone(bound.agent)
-#--------------------------------------------------------------------
+
+# ---------------------------------------------------------------------
 # Test all API send-like methods call cast with the correct arguments
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 
     def test_bind_with_agent(self):
         """test when Actor.bind(connection, agent)"""
@@ -170,9 +171,10 @@ class test_Actor(Case):
         self.assertTupleEqual(a2.state.contributed, (1, a2))
         with self.assertRaises(AttributeError):
             a2.state.actor
-#-----------------------------------------------------------------
+
+# -----------------------------------------------------------------
 # Test the API for invoking a remote method
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 
     def test_throw(self):
         # Set Up
@@ -358,9 +360,9 @@ class test_Actor(Case):
         self.assertIsInstance(res, AsyncResult)
         self.assertEquals(res.ticket, ticket)
 
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 # Test the cast method
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 
     @patch('kombu.transport.memory.Channel.basic_publish')
     def assert_cast_calls_basic_publish_with(self, a, routing_key,
@@ -545,9 +547,10 @@ class test_Actor(Case):
 
         clean_up_consumers([a_con, b_con, c_con])
 
-#-----------------------------------------------------------------
-# Test functionality for correct dispatch of method calls
-#--------------------------------------------------------------------------
+# -----------------------------------------------------------------
+#  Test functionality for correct dispatch of method calls
+# --------------------------------------------------------------------------
+
     def test_on_message_when_reply_to_is_set(self):
 
         class Foo(Actor):
@@ -669,8 +672,6 @@ class test_Actor(Case):
         message.ack.assert_called_once_with()
 
     def test_on_message_when_unexisted_method_is_passed(self):
-        args, ret_val = {'bar': 'foo_arg'}, 'fooo'
-
         body, message = get_test_message('bar', {'bar': 'foo_arg'},
                                          A.__class__.__name__)
         message.ack = Mock()
@@ -876,7 +877,7 @@ class test_Actor(Case):
         reply_body = reply_msg.decode()
         self.assertEquals(reply_body, body)
 
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 # Test actor to actor binding functionality (add_binding, remove_binding)
 # ----------------------------------------------------------------
 
@@ -967,7 +968,7 @@ class test_Actor(Case):
 
     @with_in_memory_connection
     def test_add_remove_binding_when_routing_key_is_empty(self, conn):
-        a, b = A(conn), A(conn)
+        a = A(conn)
         routing_key, mock_entity_type = "", ACTOR_TYPE.SCATTER
         source_ex = Exchange('bar.foo.bar', mock_entity_type)
 

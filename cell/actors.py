@@ -210,7 +210,7 @@ class Actor(object):
         else:
             raise Exception('the type:%s is not supported', type)
         binder = entity.bind_to
-        #@TODO: Declare probably should not happened here
+        # @TODO: Declare probably should not happened here
         entity.maybe_bind(self.connection.default_channel)
         maybe_declare(entity, entity.channel)
         return binder
@@ -223,7 +223,7 @@ class Actor(object):
             entity = self.type_to_exchange[type]()
             unbinder = entity.exchange_unbind
         entity = entity.maybe_bind(self.connection.default_channel)
-        #@TODO: Declare probably should not happened here
+        # @TODO: Declare probably should not happened here
         return unbinder
 
     def add_binding(self, source, routing_key='',
@@ -311,40 +311,35 @@ class Actor(object):
         if not nowait:
             return r
 
-    def scatter(self, method, args={}, nowait=False, **kwargs):
+    def scatter(self, method, args={}, nowait=False, timeout=None, **kwargs):
         """Broadcast method to all agents.
 
         if nowait is False, returns generator to iterate over the results.
 
-        :keyword limit: does exactly limit number of reads from the queue.
-        read from the queue is either  message consume, or a timeout. The limit is disabled by default.
-        :keyword timeout: the timeout for each read from the queue. The default is actor.default_timeout
-        :keyword ignore_timeout: the default is False. If True and limit parameter is not set
-        the generator is infinite - waits for messages forever.
+        :keyword limit: Limit number of reads from the queue.
+            Unlimited by default.
+        :keyword timeout: the timeout (in float seconds) waiting for replies.
+            Default is :attr:`default_timeout`.
 
          **Examples**
 
         ``scatter`` is a generator (if nowait is False)::
-            >>> res = scatter(ignore_timeouts=True):
+            >>> res = scatter()
             >>> res.next() # one event consumed, or timed out.
 
-            >>> res = scatter(ignore_timeouts=True, limit = 2):
-            >>> for i in  scatter(ignore_timeouts=True): # two events consumed or timeout
+            >>> res = scatter(limit=2):
+            >>> for i in res:  # two events consumed or timeout
             >>>     pass
-
-
-            >>> for _ in scatter(ignore_timeouts=True):
-        ...     pass  # loop forever.
 
         See :meth:`call_or_cast` for a full list of supported
         arguments.
-        """
-        kwargs.setdefault('timeout', self.default_timeout)
 
+        """
+        timeout = timeout if timeout is not None else self.default_timeout
         r = self.call_or_cast(method, args, type=ACTOR_TYPE.SCATTER,
                               nowait=nowait, **kwargs)
         if not nowait:
-            return r.gather(**kwargs)
+            return r.gather(timeout=timeout, **kwargs)
 
     def call_or_cast(self, method, args={}, nowait=False, **kwargs):
         """Apply remote `method` asynchronously or synchronously depending
@@ -432,8 +427,6 @@ class Actor(object):
         if retry_policy:  # merge default and custom policies.
             _retry_policy = dict(_retry_policy, **retry_policy)
 
-        #if type:
-        #     props.setdefault('routing_key', self.type_to_rkey[type])
         if type and type not in self.types:
             raise Exception('the type:%s is not supported', type)
         elif not type:
@@ -447,6 +440,7 @@ class Actor(object):
             return producer.publish(body, exchange=exchange, declare=declare,
                                     retry=retry, retry_policy=retry_policy,
                                     **props)
+
     def call(self, method, args={}, retry=False, retry_policy=None,
              ticket=None, **props):
         """Send message to the same actor and return :class:`AsyncResult`."""
@@ -467,11 +461,6 @@ class Actor(object):
             # don't reply, delegate to other agents.
             pass
         else:
-            #callback = message.properties['callback']
-            #kwargs = message.properties['ckwargs']
-            #r.update({'on_reply': callback})
-            #r.update({'on_reply_args': kwargs})
-
             self.reply(message, r)
 
     def reply(self, req, body, **props):
