@@ -97,5 +97,5 @@ class RPCClient(Actor):
     def request(self, method, args):
         try:
             self.request_internal(method, args)
-        except MonadReturn, val:
+        except MonadReturn as val:
             return val

@@ -5,8 +5,8 @@ from __future__ import absolute_import
 import operator
 
 from collections import namedtuple
-from itertools import imap, ifilter
 
+from kombu.five import map, filter, zip
 from kombu.utils import cached_property, symbol_by_name  # noqa
 
 __all__ = ['force_list', 'flatten',
@@ -33,7 +33,7 @@ def flatten(it):
     if it:
         try:
             return reduce(operator.add,
-                          imap(force_list, ifilter(None, it)))
+                          map(force_list, ifilter(None, it)))
         except TypeError:
             return []
     return it
@@ -41,7 +41,7 @@ def flatten(it):
 
 def first(it, default=None):
     try:
-        it.next()
+        next(it)
     except StopIteration:
         return default
 
@@ -82,6 +82,6 @@ def qualname(obj):  # noqa
 
 def first_reply(replies, key):
     try:
-        return replies.next()
+        return next(replies)
     except StopIteration:
         raise KeyError(key)

@@ -22,7 +22,7 @@ all_by_module = {
 }
 
 object_origins = {}
-for module, items in all_by_module.iteritems():
+for module, items in all_by_module.items():
     for item in items:
         object_origins[item] = module
 

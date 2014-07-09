@@ -6,6 +6,7 @@ from inspect import isclass
 import weakref
 
 from kombu.common import uuid, ignore_errors
+from kombu.five import items, values
 from kombu.log import get_logger, setup_logging
 from kombu.mixins import ConsumerMixin
 from kombu.utils import symbol_by_name
@@ -54,7 +55,7 @@ class dAgent(Actor):
 
         def reset(self):
             debug('Resetting active actors')
-            for actor in self.registry.itervalues():
+            for actor in values(self.registry):
                 if actor.consumer:
                     ignore_errors(self.connection, actor.consumer.cancel)
                 actor.connection = self.connection
@@ -69,7 +70,7 @@ class dAgent(Actor):
                     ignore_errors(self.connection, actor.consumer.cancel)
 
         def select(self, cls):
-            for key, val in self.registry.iteritems():
+            for key, val in items(self.registry):
                 if qualname(val.__class__) == cls:
                     return key
             # delegate to next agent.
@@ -77,7 +78,7 @@ class dAgent(Actor):
 
         def _shutdown(self, cancel=True, close=True, clear=True):
             try:
-                for actor in self.registry.itervalues():
+                for actor in values(self.registry):
                     if actor and actor.consumer:
                         if cancel:
                             ignore_errors(self.connection,

@@ -12,6 +12,7 @@ from time import time, sleep
 
 from kombu import Exchange, Queue
 from kombu.common import ipublish
+from kombu.five import items
 from kombu.log import LogMixin
 from kombu.mixins import ConsumerMixin
 from kombu.pools import producers
@@ -27,7 +28,7 @@ class State(LogMixin):
 
     def __init__(self, presence):
         self.presence = presence
-        self._agents = defaultdict(lambda: {})
+        self._agents = defaultdict(dict)
         self.heartbeat_expire = self.presence.interval * 2.5
         self.handlers = {'online': self.when_online,
                          'offline': self.when_offline,
@@ -36,7 +37,7 @@ class State(LogMixin):
 
     def can(self, actor):
         able = set()
-        for id, state in self.agents.iteritems():
+        for id, state in items(self.agents):
             if actor in state['actors']:
                 # remove the . from the agent, which means that the
                 # agent is a clone of another agent.
@@ -51,7 +52,7 @@ class State(LogMixin):
 
     def agents_by_meta(self, predicate, *sections):
         agents = self._agents
-        agent_ids = agents.keys()
+        agent_ids = list(agents.keys())
         # shuffle the agents so we don't get the same agent every time.
         shuffle(agent_ids)
         for agent in agent_ids:
@@ -85,7 +86,7 @@ class State(LogMixin):
 
     def expire_agents(self):
         expired = set()
-        for id, state in self._agents.iteritems():
+        for id, state in items(self._agents):
             if state and state.get('ts'):
                 if time() > state['ts'] + self.heartbeat_expire:
                     expired.add(id)
@@ -108,7 +109,7 @@ class State(LogMixin):
         self._agents[agent].clear()
 
     def neighbors(self):
-        return {'agents': self.agents.keys()}
+        return {'agents': list(self.agents.keys())}
 
     @property
     def agents(self):
@@ -152,7 +153,7 @@ class Presence(ConsumerMixin):
                           neighbors=self.state.neighbors())
 
     def meta(self):
-        return dict((actor.name, actor.meta) for actor in self.agent.actors)
+        return {actor.name: actor.meta for actor in self.agent.actors}
 
     @contextmanager
     def extra_context(self, connection, channel):

@@ -87,7 +87,7 @@ Map-reduce
                 super(Aggregator.state, self).__init__()
 
             def aggregate(self, words):
-                for word, n in words.iteritems():
+                for word, n in words.items():
                     self.result.setdefault(word, 0)
                     self.result[word] += n
 
@@ -96,7 +96,7 @@ Map-reduce
                     self.print_result()
 
             def print_result(self):
-                for (key, val) in self.result.iteritems():
+                for (key, val) in self.result.items():
                     print "%s:%s" % (key, val)
 
 

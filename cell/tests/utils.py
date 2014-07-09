@@ -15,10 +15,6 @@ import platform
 import re
 import sys
 import warnings
-try:
-    import __builtin__ as builtins
-except ImportError:  # py3k
-    import builtins  # noqa
 
 from contextlib import contextmanager
 from functools import partial, wraps
@@ -26,21 +22,8 @@ from types import ModuleType
 
 import mock
 from nose import SkipTest
+from kombu.five import builtins, items, string_t, reraise, values, WhateverIO
 from kombu.utils import nested
-
-is_py3k = sys.version_info[0] == 3
-
-if is_py3k:                                 # pragma: no cover
-    from io import StringIO, BytesIO
-    from .encoding import bytes_to_str
-
-    class WhateverIO(StringIO):
-
-        def write(self, data):
-            StringIO.write(self, bytes_to_str(data))
-else:
-    from StringIO import StringIO           # noqa
-    BytesIO = WhateverIO = StringIO         # noqa
 
 
 class Mock(mock.Mock):
@@ -48,7 +31,7 @@ class Mock(mock.Mock):
     def __init__(self, *args, **kwargs):
         attrs = kwargs.pop('attrs', None) or {}
         super(Mock, self).__init__(*args, **kwargs)
-        for attr_name, attr_value in attrs.items():
+        for attr_name, attr_value in items(attrs):
             setattr(self, attr_name, attr_value)
 
 
@@ -78,7 +61,7 @@ class _AssertRaisesBaseContext(object):
         self.expected = expected
         self.failureException = test_case.failureException
         self.obj_name = None
-        if isinstance(expected_regex, basestring):
+        if isinstance(expected_regex, string_t):
             expected_regex = re.compile(expected_regex)
         self.expected_regex = expected_regex
 
@@ -90,7 +73,7 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
         # The __warningregistry__'s need to be in a pristine state for tests
         # to work properly.
         warnings.resetwarnings()
-        for v in sys.modules.values():
+        for v in values(sys.modules):
             if getattr(v, '__warningregistry__', None):
                 v.__warningregistry__ = {}
         self.warnings_manager = warnings.catch_warnings(record=True)
@@ -147,7 +130,7 @@ class Case(unittest.TestCase):
     def assertDictContainsSubset(self, expected, actual, msg=None):
         missing, mismatched = [], []
 
-        for key, value in expected.iteritems():
+        for key, value in items(expected):
             if key not in actual:
                 missing.append(key)
             elif value != actual[key]:
@@ -312,7 +295,7 @@ def mock_context(mock, typ=Mock):
 
     def on_exit(*x):
         if x[0]:
-            raise x[0], x[1], x[2]
+            reraise(x[0], x[1], x[2])
     context.__exit__.side_effect = on_exit
     context.__enter__.return_value = context
     yield context

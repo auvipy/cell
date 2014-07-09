@@ -33,7 +33,7 @@ class Entry(object):
     def __call__(self):
         try:
             return blocking(self.fun, *self.args, **self.kwargs)
-        except Exception, exc:
+        except Exception as exc:
             warnings.warn('Periodic timer %r raised: %r' % (self.fun, exc))
         finally:
             self._spawn()

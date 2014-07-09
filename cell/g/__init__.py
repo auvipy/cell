@@ -1,11 +1,12 @@
 from __future__ import absolute_import
 
+from kombu.five import keys
 from kombu.syn import detect_environment
 
 from cell.utils import cached_property
 
 G_NOT_FOUND = """\
-cell does not currently support %r, please use one of %s\
+cell does not currently support {0!r}, please use one of {1}\
 """
 
 
@@ -38,8 +39,8 @@ class G(object):
         try:
             return getattr(self, self.map[type])
         except KeyError:
-            raise KeyError(G_NOT_FOUND % (type,
-                                          ', '.join(self.map.keys())))
+            raise KeyError(G_NOT_FOUND.format(
+                type, ', '.join(keys(self.map))))
 
 g = G()
 blocking = g.blocking

@@ -10,10 +10,11 @@ from operator import itemgetter
 
 from kombu import Consumer, Exchange, Queue
 from kombu.common import collect_replies, maybe_declare, uuid
+from kombu.five import items
 from kombu.log import Log
 from kombu import serialization
 from kombu.pools import producers
-from kombu.utils import kwdict, reprcall, reprkwargs, symbol_by_name
+from kombu.utils import reprcall, reprkwargs, symbol_by_name
 from kombu.utils.encoding import safe_repr
 from kombu.utils.functional import maybe_list
 
@@ -22,7 +23,6 @@ from . import exceptions
 from cell.exceptions import WrongNumberOfArguments
 from .results import AsyncResult
 from .utils import cached_property, enum, shortuuid, setattr_default
-import time
 
 __all__ = ['Actor']
 BUILTIN_FIELDS = {'ver': __version__}
@@ -34,25 +34,7 @@ ACTOR_TYPE = enum(
 )
 
 
-class ActorType(type):
-    """Metaclass for actors.
-
-    Only modifies the textual representation of actor classes.
-
-    """
-    def __repr__(self):
-        name = self.name
-        if not name:
-            try:
-                name = self.__name__
-            except AttributeError:
-                name = self.__class__.__name__
-        return '<@actor: %s>' % name
-
-
 class Actor(object):
-    __metaclass__ = ActorType
-
     AsyncResult = AsyncResult
 
     Error = exceptions.CellError
@@ -129,7 +111,7 @@ class Actor(object):
 
     #: returns the next anonymous ticket number
     #: used fo+r identifying related logs.
-    next_anon_ticket = count(1).next
+    ticket_count = count(1)
 
     #: Additional fields added to reply messages by default.
     default_fields = {}
@@ -143,8 +125,7 @@ class Actor(object):
     consumer = None
 
     class state(object):
-        """ Placeholder class for actor's supported methods.
-        """
+        """Placeholder class for actor's supported methods."""
         pass
 
     def __init__(self, connection=None, id=None, name=None, exchange=None,
@@ -171,8 +152,8 @@ class Actor(object):
             ACTOR_TYPE.SCATTER: [self.get_scatter_queue, self._inbox_scatter]
         }
 
-        self.type_to_queue = dict((k, v[0]) for k, v in typemap.iteritems())
-        self.type_to_exchange = dict((k, v[1]) for k, v in typemap.iteritems())
+        self.type_to_queue = {k: v[0] for k, v in items(typemap)}
+        self.type_to_exchange = {k: v[1] for k, v in items(typemap)}
 
         if not self.outbox_exchange:
             self.outbox_exchange = Exchange(
@@ -184,7 +165,6 @@ class Actor(object):
             logger_name = '%s#%s' % (self.name, shortuuid(self.id))
         self.log = Log('!<%s>' % logger_name, logger=logger)
         self.state = self.contribute_to_state(self.construct_state())
-        self.timestamp = time.time()
 
         # actor specific initialization.
         self.construct()
@@ -208,7 +188,7 @@ class Actor(object):
         elif type in self.types:
             entity = self.type_to_exchange[type]()
         else:
-            raise Exception('the type:%s is not supported', type)
+            raise ValueError('Unsupported type: {0}'.format(type))
         binder = entity.bind_to
         # @TODO: Declare probably should not happened here
         entity.maybe_bind(self.connection.default_channel)
@@ -236,7 +216,6 @@ class Actor(object):
 
     def remove_binding(self, source, routing_key='',
                        inbox_type=ACTOR_TYPE.DIRECT):
-
         self.call('remove_binding', {
             'source': source.as_dict(),
             'routing_key': routing_key,
@@ -255,7 +234,7 @@ class Actor(object):
         pass
 
     def contribute_to_object(self, obj, map):
-        for attr, value in map.iteritems():
+        for attr, value in items(map):
             setattr_default(obj, attr, value)
         return obj
 
@@ -286,7 +265,7 @@ class Actor(object):
 
         If the keyword argument `nowait` is false (default) it
         will block and return the reply.
-
+j
         """
 
         if to is None:
@@ -337,7 +316,7 @@ class Actor(object):
         """
         timeout = timeout if timeout is not None else self.default_timeout
         r = self.call_or_cast(method, args, type=ACTOR_TYPE.SCATTER,
-                              nowait=nowait, **kwargs)
+                              nowait=nowait, timeout=timeout, **kwargs)
         if not nowait:
             return r.gather(timeout=timeout, **kwargs)
 
@@ -428,7 +407,7 @@ class Actor(object):
             _retry_policy = dict(_retry_policy, **retry_policy)
 
         if type and type not in self.types:
-            raise Exception('the type:%s is not supported', type)
+            raise ValueError('Unsupported type: {0}'.format(type))
         elif not type:
             type = ACTOR_TYPE.DIRECT
 
@@ -477,7 +456,6 @@ class Actor(object):
             )
 
     def on_message(self, body, message):
-        self.timestamp = time.time()
         self.agent.process_message(self, body, message)
 
     def _on_message(self, body, message):
@@ -570,17 +548,17 @@ class Actor(object):
         if ticket:
             sticket = '%s' % (shortuuid(ticket), )
         else:
-            ticket = sticket = str(self.next_anon_ticket())
+            ticket = sticket = str(next(self.ticket_counter))
         try:
             method, args = itemgetter('method', 'args')(body)
             self.log.info('#%s --> %s',
                           sticket, self._reprcall(method, args))
             act = self.lookup_action(method)
-            r = {'ok': act(**kwdict(args or {}))}
+            r = {'ok': act(args or {})}
             self.log.info('#%s <-- %s', sticket, reprkwargs(r))
         except self.Next:
             raise
-        except Exception, exc:
+        except Exception as exc:
             einfo = sys.exc_info()
             r = {'nok': [safe_repr(exc), self._get_traceback(einfo)]}
             self.log.error('#%s <-- nok=%r', sticket, exc)

@@ -1,19 +1,17 @@
 #!/usr/bin/env python
-
 from __future__ import absolute_import
-from __future__ import with_statement
 
 import errno
 import os
 import re
-import shlex
-import subprocess
 import sys
+import subprocess
 
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
 
 rq = lambda s: s.strip("\"'")
+str_t = str if sys.version_info[0] >= 3 else basestring
 
 
 def cmd(*args):
@@ -24,7 +22,7 @@ def cmd(*args):
 def no_enoent():
     try:
         yield
-    except OSError, exc:
+    except OSError as exc:
         if exc.errno != errno.ENOENT:
             raise
 
@@ -57,7 +55,7 @@ class TupleVersion(object):
         v = list(v)
 
         def quote(lit):
-            if isinstance(lit, basestring):
+            if isinstance(lit, str_t):
                 return '"%s"' % (lit, )
             return str(lit)
 
@@ -120,9 +118,9 @@ class CPPVersion(VersionFile):
 
 _filetype_to_type = {"py": PyVersion,
                      "rst": SphinxVersion,
-                     "txt": SphinxVersion,
                      "c": CPPVersion,
                      "h": CPPVersion}
+
 
 def filetype_to_type(filename):
     _, _, suffix = filename.rpartition(".")
@@ -131,7 +129,6 @@ def filetype_to_type(filename):
 
 def bump(*files, **kwargs):
     version = kwargs.get("version")
-    before_commit = kwargs.get("before_commit")
     files = [filetype_to_type(f) for f in files]
     versions = [v.parse() for v in files]
     current = list(reversed(sorted(versions)))[0]  # find highest
@@ -150,31 +147,20 @@ def bump(*files, **kwargs):
         print("  writing %r..." % (v.filename, ))
         v.write(next)
 
-    if before_commit:
-        cmd(*shlex.split(before_commit))
-
     print(cmd("git", "commit", "-m", "Bumps version to %s" % (to_str(next), ),
-        *[f.filename for f in files]))
+          *[f.filename for f in files]))
     print(cmd("git", "tag", "v%s" % (to_str(next), )))
 
 
-def main(argv=sys.argv, version=None, before_commit=None):
+def main(argv=sys.argv, version=None):
     if not len(argv) > 1:
         print("Usage: distdir [docfile] -- <custom version>")
         sys.exit(0)
-
-    args = []
-    for arg in argv:
-        if arg.startswith("--before-commit="):
-            _, before_commit = arg.split('=')
-        else:
-            args.append(arg)
-
-    if "--" in args:
-        c = args.index('--')
-        version = args[c + 1]
-        argv = args[:c]
-    bump(*args[1:], version=version, before_commit=before_commit)
+    if "--" in argv:
+        c = argv.index('--')
+        version = argv[c + 1]
+        argv = argv[:c]
+    bump(*argv[1:], version=version)
 
 if __name__ == "__main__":
     main()

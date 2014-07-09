@@ -6,14 +6,9 @@ import codecs
 
 extra = {}
 tests_require = ['nose', 'nose-cover3']
-if sys.version_info >= (3, 0):
-    extra.update(use_2to3=True)
-elif sys.version_info <= (2, 6):
-    tests_require.append('unittest2')
 
-
-if sys.version_info < (2, 6):
-    raise Exception('cell requires Python 2.6 or higher.')
+if sys.version_info < (2, 7):
+    raise Exception('cell requires Python 2.7 or higher.')
 
 try:
     from setuptools import setup
@@ -98,7 +93,7 @@ if os.path.exists('README.rst'):
 else:
     long_description = 'See http://pypi.python.org/pypi/cell'
 
-install_requires = ['kombu>=2.4.7']
+install_requires = ['kombu>=3.0']
 setup(
     name='cell',
     version=meta['VERSION'],
@@ -120,7 +115,8 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
         'Intended Audience :: Developers',
         'Topic :: Communications',
         'Topic :: System :: Distributed Computing',

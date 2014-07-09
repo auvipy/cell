@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 
 from kombu import Consumer, Queue
+from komub.five import items, string_t
 from kombu.utils import gen_unique_id
 
 from . import Actor
@@ -24,8 +25,8 @@ class ModelConsumer(Consumer):
         super(ModelConsumer, self).__init__(channel, queues, *args, **kwargs)
 
     def prepare_signals(self, sigmap=None):
-        for callback, connect in (sigmap or {}).iteritems():
-            if isinstance(callback, basestring):
+        for callback, connect in items(sigmap or {}):
+            if isinstance(callback, string_t):
                 callback = getattr(self, callback)
             connect(callback)
 

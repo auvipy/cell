@@ -221,7 +221,7 @@ class test_dAgent(Case):
             yield None
 
         gen = scatter_result()
-        gen.next()
+        next(gen)
         ag = dAgent(conn)
         ag.scatter = Mock(return_value=gen)
 

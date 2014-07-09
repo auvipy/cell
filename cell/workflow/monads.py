@@ -4,7 +4,7 @@ import types
 
 from collections import deque
 from functools import wraps
-from Queue import Queue
+from kombu.five import Queue
 
 # ##### Base Monad and @do syntax #########
 
@@ -72,9 +72,9 @@ def do(fun, args, kwargs, Monad):
 def handle_monadic_throws(fun, args, kwargs, Monad):
     try:
         return fun(*args, **kwargs)
-    except MonadReturn, ret:
+    except MonadReturn as ret:
         return Monad.unit(ret.value)
-    except Done, done:
+    except Done as done:
         assert isinstance(done.monad, Monad)
         return done.monad
 
@@ -344,7 +344,7 @@ if __name__ == "__main__":
             print('Entering filter')
             while 1:
                 val = (yield mbin.receive())
-                print('In filter:', val)
+                print('In filter: {0}'.format(val))
                 res = cond(val)
                 mbout.send((val, res))
 
@@ -368,8 +368,8 @@ if __name__ == "__main__":
             par(l, collector)
             for c, count in enumerate(l):
                 val = (yield collector.receive())
-                print('Inside join', val)
-            print('Counter is:', c)
+                print('Inside join: {0}'.format(val))
+            print('Counter is: {0}'.format(c))
             waiter.send('Done')
 
         def csend(actor, task):
@@ -393,7 +393,7 @@ if __name__ == "__main__":
 
             def start(*args, **kwargs):
                 cr = fun(*args, **kwargs)
-                cr.next()
+                next(cr)
                 return cr
             return start
 
@@ -414,7 +414,7 @@ if __name__ == "__main__":
         def add_callback(waiter):
             print('In do computation')
             s = (yield waiter.receive())
-            print('I think it is time to end this wonderful jurney:', s)
+            print('Time to end this wonderful jurney: {0}'.format(s))
             # nooooooo
 
         # worker@allice@workflow
