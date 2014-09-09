@@ -6,7 +6,7 @@ import operator
 
 from collections import namedtuple
 
-from kombu.five import map, filter, zip
+from kombu.five import map, zip
 from kombu.utils import cached_property, symbol_by_name  # noqa
 
 __all__ = ['force_list', 'flatten',
@@ -33,7 +33,7 @@ def flatten(it):
     if it:
         try:
             return reduce(operator.add,
-                          map(force_list, ifilter(None, it)))
+                          map(force_list, (x for x in it if x)))
         except TypeError:
             return []
     return it
