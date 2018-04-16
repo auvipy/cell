@@ -154,9 +154,9 @@ Getting Help
 Mailing list
 ------------
 
-Join the `carrot-users`_ mailing list.
+Join the `celery-users`_ mailing list.
 
-.. _`carrot-users`: http://groups.google.com/group/carrot-users/
+.. _`celery-users`: http://groups.google.com/group/celery-users/
 
 Bug tracker
 ===========
