@@ -45,6 +45,7 @@ class module(ModuleType):
                        '__contact__', '__homepage__', '__docformat__'))
         return result
 
+
 # keep a reference to this module so that it's not garbage collected
 old_module = sys.modules[__name__]
 
