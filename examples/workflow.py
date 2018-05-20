@@ -7,11 +7,11 @@ from celery.utils.imports import instantiate
 
 my_app = celery.Celery(broker='pyamqp://guest@localhost//')
 
-#celery.Celery().control.broadcast('shutdown')
+# celery.Celery().control.broadcast('shutdown')
 #from examples.workflow import FilterExample
 #from examples.workflow import actors_mng
 #f = FilterExample()
-#f.start()
+# f.start()
 #from examples.workflow import TestActor
 #t = TestActor()
 
@@ -39,7 +39,7 @@ class WorkflowActor(Actor):
 class TrueFilter(WorkflowActor):
 
     class state(WorkflowActor.state):
-        def filter(self,  msg):
+        def filter(self, msg):
             print 'Msg:%s received in filter' % (msg)
             self.actor.emit('notify', {'msg': msg})
 
@@ -47,7 +47,7 @@ class TrueFilter(WorkflowActor):
 class FalseFilter(WorkflowActor):
 
     class state(WorkflowActor.state):
-        def filter(self,  msg):
+        def filter(self, msg):
             print 'Msg:%s received in filter' % (msg)
             self.actor.emit('notify', {'msg': msg})
 
@@ -66,7 +66,7 @@ class Joiner(WorkflowActor):
             self.count = 0
             self.sources = sources
 
-        def notify(self,  msg):
+        def notify(self, msg):
             print 'In notify with count: %s and msg:%s' % (self.count,
                                                            msg)
             self.count += 1
@@ -83,7 +83,7 @@ class GuardedActor(WorkflowActor):
             connection or my_app.broker_connection(), *args, **kwargs)
 
     class state(WorkflowActor.state):
-        def set_ready(self,  msg):
+        def set_ready(self, msg):
             self.ready = True
             self.do_smth()
 
@@ -93,9 +93,9 @@ class GuardedActor(WorkflowActor):
 
 class Printer(GuardedActor):
     types = ('scatter', 'round-robin', 'direct')
+
     def __init__(self, **kwargs):
         super(Printer, self).__init__(**kwargs)
-
 
     class state(GuardedActor.state):
 
@@ -157,6 +157,7 @@ def multilplex(outbox, inboxes):
                           routing_key=outbox.routing_key,
                           inbox_type='direct')
 
+
 join = Infix(join)
 
 forward = Infix(forward)
@@ -183,15 +184,14 @@ class FilterExample:
         [filter1, filter2, printer, logger, collector] = list(wf.start())
         print 'collector_id after start:' + collector.id
 
-
-
         time.sleep(2)
 
-        [filter1, filter2] |join| collector
-        collector |multiplex| [printer, logger]
+        [filter1, filter2] | join | collector
+        collector | multiplex | [printer, logger]
 
         filter1.call('filter', {'msg': 'Ihu'})
         filter2.call('filter', {'msg': 'Ahu'})
+
 
 printer_name = 'examples.workflow.Printer'
 """actors_mng = ActorsManager(connection = my_app.broker_connection(),
@@ -201,8 +201,8 @@ printer_name = 'examples.workflow.Printer'
 agent = dAgent(connection=my_app.broker_connection())
 
 if __name__ == '__main__':
-        printer = Printer()
-        agent.spawn(printer)
+    printer = Printer()
+    agent.spawn(printer)
 
 """Example usage:
 >>from examples.workflow import Printer, Logger, actors_mng

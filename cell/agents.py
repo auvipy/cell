@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 
 from inspect import isclass
+from operator import itemgetter
 import weakref
 
 from kombu.common import uuid, ignore_errors
@@ -18,7 +19,6 @@ __all__ = ['Agent', 'dAgent']
 
 logger = get_logger(__name__)
 debug, warn, error = logger.debug, logger.warn, logger.error
-from operator import itemgetter
 
 
 class dAgent(Actor):

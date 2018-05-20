@@ -38,6 +38,8 @@ def make_decorator_with_args(fun):
     def decorator_with_args(*dec_args):
         return make_decorator(fun, *dec_args)
     return decorator_with_args
+
+
 decorator = make_decorator
 decorator_with_args = make_decorator_with_args
 
@@ -202,7 +204,7 @@ def callcc(usecc):
         lambda cont: usecc(
             lambda val: ContinuationMonad(
                 lambda _: cont(val))
-            ).run(cont)
+        ).run(cont)
     )
 
 

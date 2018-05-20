@@ -42,6 +42,7 @@ class G(object):
             raise KeyError(G_NOT_FOUND.format(
                 type, ', '.join(keys(self.map))))
 
+
 g = G()
 blocking = g.blocking
 spawn = g.spawn
