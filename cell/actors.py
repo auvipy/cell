@@ -130,7 +130,7 @@ class Actor(object):
 
     def __init__(self, connection=None, id=None, name=None, exchange=None,
                  logger=None, agent=None, outbox_exchange=None,
-                 group_exchange=None,  **kwargs):
+                 group_exchange=None, **kwargs):
         self.connection = connection
         self.id = id or uuid()
         self.name = name or self.name or self.__class__.__name__
@@ -219,7 +219,7 @@ class Actor(object):
         self.call('remove_binding', {
             'source': source.as_dict(),
             'routing_key': routing_key,
-            'inbox_type':  inbox_type,
+            'inbox_type': inbox_type,
         }, type=ACTOR_TYPE.DIRECT)
 
     def construct(self):
@@ -682,8 +682,8 @@ class ActorProxy(object):
             return self.func(meth, *args[1:], **kw)
 
         def __getattr__(self, name):
-                return partial(
-                    self.func, getattr(self.parent.state, name).__name__)
+            return partial(
+                self.func, getattr(self.parent.state, name).__name__)
 
     @cached_property
     def call(self):
@@ -691,7 +691,7 @@ class ActorProxy(object):
 
     @cached_property
     def throw(self):
-            return self.state(self._actor, self.id, self._actor.throw)
+        return self.state(self._actor, self.id, self._actor.throw)
 
     @cached_property
     def send(self):
@@ -699,10 +699,10 @@ class ActorProxy(object):
 
     @cached_property
     def scatter(self):
-            return self.state(self._actor, self.id, self._actor.scatter)
+        return self.state(self._actor, self.id, self._actor.scatter)
 
     def __getattr__(self, name):
-            return getattr(self._actor, name)
+        return getattr(self._actor, name)
 
     # Notify when the actor is started
     def wait_to_start(self, **kwargs):

@@ -23,6 +23,7 @@ class Infix:
 
 # Examples
 
+
 # simple multiplication
 send = Infix(lambda channel, task: channel * task)
 recv = Infix(lambda channel, task: channel * task)

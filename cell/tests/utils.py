@@ -22,7 +22,7 @@ from types import ModuleType
 
 import mock
 from nose import SkipTest
-from kombu.five import builtins, items, string_t, reraise, values, WhateverIO
+from kombu.five import items, string_t, reraise, values, WhateverIO
 from kombu.utils import nested
 
 
@@ -180,11 +180,11 @@ class Case(unittest.TestCase):
 
 def with_in_memory_connection(fn):
 
-        @wraps(fn)
-        def wrapper(self, *args, **kwargs):
-                with Connection('memory://') as conn:
-                    fn(self, conn, *args, **kwargs)
-        return wrapper
+    @wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        with Connection('memory://') as conn:
+            fn(self, conn, *args, **kwargs)
+    return wrapper
 
 
 def with_environ(env_name, env_value):
@@ -241,6 +241,8 @@ def replace_module_value(module, name, value=None):
             delattr(module, name)
         except AttributeError:
             pass
+
+
 pypy_version = partial(
     replace_module_value, sys, 'pypy_version_info',
 )
