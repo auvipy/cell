@@ -6,8 +6,6 @@ env:
   global:
     PYTHONUNBUFFERED=yes
 
-stages:
-  - test
 
 matrix:
   include:
