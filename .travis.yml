@@ -1,0 +1,32 @@
+language: python
+sudo: false
+cache: pip
+
+env:
+  global:
+    PYTHONUNBUFFERED=yes
+
+stages:
+  - test
+
+matrix:
+  include:
+    - python: 2.7
+      env: TOXENV=2.7
+    - python: 3.6
+      env: TOXENV=3.6
+
+
+install:
+    - pip install -U pip setuptools wheel | cat
+    - pip install -U tox | cat
+script: tox -v -- -v
+after_success:
+  - .tox/$TRAVIS_PYTHON_VERSION/bin/coverage xml
+  - .tox/$TRAVIS_PYTHON_VERSION/bin/codecov -e TOXENV
+notifications:
+  irc:
+    channels:
+      - "chat.freenode.net#celery"
+    on_success: change
+    on_failure: change
