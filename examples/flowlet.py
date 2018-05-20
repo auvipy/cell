@@ -1,8 +1,10 @@
+import time
 from math import sqrt
 from cell.actors import Actor
 from cell.agents import dAgent
 from cell.results import AsyncResult
 from kombu.connection import Connection
+
 
 class Abs(Actor):
     class state(object):
@@ -14,15 +16,17 @@ class Abs(Actor):
             print 'The abs result is:', new_val
             return new_val
 
+
 class Square(Actor):
     class state(object):
 
         def calc(self, val):
             if isinstance(val, AsyncResult):
                 val = val.get()
-            new_val = val*val
+            new_val = val * val
             print 'The square result is:', new_val
             return new_val
+
 
 class SquareRoot(Actor):
     class state(object):
@@ -33,6 +37,7 @@ class SquareRoot(Actor):
             new_val = sqrt(val)
             print 'The sqrt result is:', new_val
             return new_val
+
 
 class Printer(Actor):
     def __init__(self, **kwargs):
@@ -46,7 +51,7 @@ class Printer(Actor):
             print 'The printer result is:', val
             return val
 
-import time
+
 class Calculator(object):
     def __init__(self):
         self.agent = agent = dAgent(Connection())
@@ -57,12 +62,11 @@ class Calculator(object):
 
     def run(self, val):
         start = time.time()
-        val = self.abs.send.calc({'val' :val})
-        val = self.sqrt.send.calc({'val' :val})
-        self.printer.call.send({'val' :val})
+        val = self.abs.send.calc({'val': val})
+        val = self.sqrt.send.calc({'val': val})
+        self.printer.call.send({'val': val})
         total = start - time.time()
         print 'Finish in:', total
-
 
 
 if __name__ == '__main__':

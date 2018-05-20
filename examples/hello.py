@@ -9,12 +9,14 @@ class GreetingActor(Actor):
         def greet(self, who='world'):
             return 'Hello %s' % who
 
+
 class ByeActor(Actor):
     class state(GreetingActor.state):
         def bye(self, who='world'):
             print 'Bye %s' % who
 
-#Run from the command line:
+
+# Run from the command line:
 """
 from kombu import Connection
 from examples.hello import GreetingActor
@@ -30,7 +32,7 @@ id = agent.select(Printer)
 """
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     """agent = dAgent(Connection())
     actor = agent.spawn(GreetingActor)
 

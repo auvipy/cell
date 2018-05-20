@@ -8,8 +8,8 @@ agent = dAgent(connection=my_app.broker_connection())
 
 class User(Actor):
     def __init__(self, connection=None, *args, **kwargs):
-            super(User, self).__init__(
-                connection or my_app.broker_connection(), *args, **kwargs)
+        super(User, self).__init__(
+            connection or my_app.broker_connection(), *args, **kwargs)
 
     class state():
 
@@ -30,6 +30,7 @@ class User(Actor):
         a = User(id=actor, connection=self.connection)
         msg = 'Actor %s is sending you a message: %s' % (self.id, msg)
         a.call('post', {'msg': msg})
+
 
 if __name__ == '__main__':
     import examples.chat
