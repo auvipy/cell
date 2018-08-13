@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from cell.actors import Actor
 from cell.agents import dAgent
 from kombu.entity import Exchange

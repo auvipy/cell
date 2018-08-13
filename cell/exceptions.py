@@ -1,6 +1,5 @@
 """cell.exceptions"""
 
-from __future__ import absolute_import
 
 __all__ = ['CellError', 'Next', 'NoReplyError', 'NotBoundError']
 

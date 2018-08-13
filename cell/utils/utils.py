@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 
 def lazy_property(property_name, property_factory, doc=None):
 
