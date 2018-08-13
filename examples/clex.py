@@ -10,7 +10,7 @@ class BlenderActor(cell.Actor):
         # - use celery's connection by default,
         # - means the agent must be started from where it has access
         # - to the celery config.
-        super(BlenderActor, self).__init__(
+        super().__init__(
             connection or celery.broker_connection(), *args, **kwargs)
 
     class state:
@@ -27,6 +27,8 @@ class BlenderActor(cell.Actor):
 
     def render(self, blabla, nowait=False):
         return self.throw('render', {'blabla': blabla}, nowait=nowait)
+
+
 blender = BlenderActor()
 
 
@@ -35,7 +37,7 @@ class Agent(cell.Agent):
 
     def __init__(self, connection=None, *args, **kwargs):
         # - use celery's connection by default
-        super(Agent, self).__init__(
+        super().__init__(
             connection or celery.broker_connection(), *args, **kwargs)
 
 

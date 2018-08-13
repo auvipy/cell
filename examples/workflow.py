@@ -26,7 +26,7 @@ Filter -> (Logger | Printer)
 
 class WorkflowActor(Actor):
     def __init__(self, connection=None, *args, **kwargs):
-        super(WorkflowActor, self).__init__(
+        super().__init__(
             connection or my_app.broker_connection(), *args, **kwargs)
 
     class state(Actor.state):
@@ -40,7 +40,7 @@ class TrueFilter(WorkflowActor):
 
     class state(WorkflowActor.state):
         def filter(self, msg):
-            print 'Msg:%s received in filter' % (msg)
+            print('Msg:%s received in filter' % (msg))
             self.actor.emit('notify', {'msg': msg})
 
 
@@ -48,13 +48,13 @@ class FalseFilter(WorkflowActor):
 
     class state(WorkflowActor.state):
         def filter(self, msg):
-            print 'Msg:%s received in filter' % (msg)
+            print('Msg:%s received in filter' % (msg))
             self.actor.emit('notify', {'msg': msg})
 
 
 class Joiner(WorkflowActor):
     def __init__(self, connection=None, *args, **kwargs):
-        super(Joiner, self).__init__(
+        super().__init__(
             connection or my_app.broker_connection(), *args, **kwargs)
 
     def is_mutable(self):
@@ -62,13 +62,13 @@ class Joiner(WorkflowActor):
 
     class state(WorkflowActor.state):
         def set_sources(self, sources):
-            print 'In set_source, Collector. Count limit is', len(sources)
+            print('In set_source, Collector. Count limit is', len(sources))
             self.count = 0
             self.sources = sources
 
         def notify(self, msg):
-            print 'In notify with count: %s and msg:%s' % (self.count,
-                                                           msg)
+            print('In notify with count: %s and msg:%s' % (self.count,
+                                                           msg))
             self.count += 1
             if self.count == len(self.sources):
                 print 'I am sending the message to whoever is subscribed'
@@ -79,7 +79,7 @@ class Joiner(WorkflowActor):
 class GuardedActor(WorkflowActor):
     def __init__(self, connection=None, *args, **kwargs):
         self.ready = False
-        super(GuardedActor, self).__init__(
+        super().__init__(
             connection or my_app.broker_connection(), *args, **kwargs)
 
     class state(WorkflowActor.state):
@@ -88,19 +88,19 @@ class GuardedActor(WorkflowActor):
             self.do_smth()
 
         def do_smth(self):
-            print 'I have finally received all messages.'
+            print('I have finally received all messages.')
 
 
 class Printer(GuardedActor):
     types = ('scatter', 'round-robin', 'direct')
 
     def __init__(self, **kwargs):
-        super(Printer, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     class state(GuardedActor.state):
 
         def do_smth(self):
-            print 'I am a printer'
+            print('I am a printer')
 
 
 class Logger(GuardedActor):
@@ -179,10 +179,10 @@ class FilterExample:
     def start(self):
         filter1, filter2, printer = TrueFilter(), FalseFilter(), Printer(),
         logger, collector = Logger(), Joiner()
-        print 'collector_id before start:' + collector.id
+        print('collector_id before start:' + collector.id)
         wf = Workflow([filter1, filter2, printer, logger, collector])
         [filter1, filter2, printer, logger, collector] = list(wf.start())
-        print 'collector_id after start:' + collector.id
+        print('collector_id after start:' + collector.id)
 
         time.sleep(2)
 

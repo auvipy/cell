@@ -10,12 +10,12 @@ agent = dAgent(connection=my_app.broker_connection())
 
 class Adder(Actor):
     def __init__(self, connection=None, *args, **kwargs):
-        super(Adder, self).__init__(
+        super().__init__(
             connection or my_app.broker_connection(), *args, **kwargs)
 
     class state():
         def add_one(self, i, token=None):
-            print 'Increasing %s with one' % i
+            print('Increasing %s with one' % i)
             res = i + 1
             self.actor.emit('count', {'res': res, 'token': token})
             return res
@@ -23,7 +23,7 @@ class Adder(Actor):
 
 class Counter(Actor):
     def __init__(self, connection=None, *args, **kwargs):
-        super(Counter, self).__init__(
+        super().__init__(
             connection or my_app.broker_connection(), *args, **kwargs)
 
     class state():
@@ -34,7 +34,7 @@ class Counter(Actor):
         def on_agent_ready(self):
             ra = Adder(self.actor.connection)
             self.adder = self.actor.agent.add_actor(ra)
-            self.adder |forward| self.actor
+            self.adder | forward | self.actor
 
         def count(self, res, token):
             (target, cur) = self.targets.get(token)
@@ -58,7 +58,7 @@ class Counter(Actor):
 
 class gCounter(Actor):
     def __init__(self, connection=None, *args, **kwargs):
-        super(gCounter, self).__init__(
+        super().__init__(
             connection or my_app.broker_connection(), *args, **kwargs)
 
     class state():
@@ -78,6 +78,7 @@ class gCounter(Actor):
 
     def on_agent_ready(self):
         self.state.on_agent_ready()
+
 
 if __name__ == '__main__':
     import examples.adder

@@ -13,7 +13,7 @@ class GreetingActor(Actor):
 class ByeActor(Actor):
     class state(GreetingActor.state):
         def bye(self, who='world'):
-            print 'Bye %s' % who
+            print('Bye %s' % who)
 
 
 # Run from the command line:

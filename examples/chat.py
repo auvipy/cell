@@ -8,7 +8,7 @@ agent = dAgent(connection=my_app.broker_connection())
 
 class User(Actor):
     def __init__(self, connection=None, *args, **kwargs):
-        super(User, self).__init__(
+        super().__init__(
             connection or my_app.broker_connection(), *args, **kwargs)
 
     class state():

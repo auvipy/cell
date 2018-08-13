@@ -7,35 +7,35 @@ from kombu.connection import Connection
 
 
 class Abs(Actor):
-    class state(object):
+    class state:
 
         def calc(self, val):
             if isinstance(val, AsyncResult):
                 val = val.get()
             new_val = abs(val)
-            print 'The abs result is:', new_val
+            print('The abs result is:', new_val)
             return new_val
 
 
 class Square(Actor):
-    class state(object):
+    class state:
 
         def calc(self, val):
             if isinstance(val, AsyncResult):
                 val = val.get()
             new_val = val * val
-            print 'The square result is:', new_val
+            print('The square result is:', new_val)
             return new_val
 
 
 class SquareRoot(Actor):
-    class state(object):
+    class state:
 
         def calc(self, val):
             if isinstance(val, AsyncResult):
                 val = val.get()
             new_val = sqrt(val)
-            print 'The sqrt result is:', new_val
+            print('The sqrt result is:', new_val)
             return new_val
 
 
@@ -48,11 +48,11 @@ class Printer(Actor):
             if isinstance(val, AsyncResult):
                 print 'receiving AsyncResult'
                 val = val.get()
-            print 'The printer result is:', val
+            print('The printer result is:', val)
             return val
 
 
-class Calculator(object):
+class Calculator:
     def __init__(self):
         self.agent = agent = dAgent(Connection())
         self.abs = agent.spawn(Abs)
@@ -66,7 +66,7 @@ class Calculator(object):
         val = self.sqrt.send.calc({'val': val})
         self.printer.call.send({'val': val})
         total = start - time.time()
-        print 'Finish in:', total
+        print('Finish in:', total)
 
 
 if __name__ == '__main__':
