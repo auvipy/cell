@@ -1,7 +1,5 @@
 """cell.models"""
 
-from __future__ import absolute_import
-
 from kombu import Consumer, Queue
 from komub.five import items, string_t
 from kombu.utils import gen_unique_id

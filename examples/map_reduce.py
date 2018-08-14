@@ -10,7 +10,7 @@ class Aggregator(Actor):
 
     def __init__(self, barrier=None, **kwargs):
         self.barrier = barrier
-        super(Aggregator, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     class state(Actor.state):
         def __init__(self):
@@ -28,7 +28,7 @@ class Aggregator(Actor):
 
         def print_result(self):
             for (key, val) in self.result.items():
-                print "%s:%s" % (key, val)
+                print("%s:%s" % (key, val))
 
 
 class Reducer(Actor):
@@ -77,6 +77,7 @@ class Mapper(Actor):
 
     def on_agent_ready(self):
         self.state.on_agent_ready()
+
 
 if __name__ == '__main__':
     import examples.map_reduce

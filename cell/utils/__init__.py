@@ -1,7 +1,4 @@
 """cl.utils"""
-
-from __future__ import absolute_import
-
 import operator
 
 from collections import namedtuple

@@ -1,6 +1,9 @@
 """Kombu actor framework"""
+import sys
+# Lazy loading.
+# - See werkzeug/__init__.py for the rationale behind this.
+from types import ModuleType
 
-from __future__ import absolute_import
 
 VERSION = (0, 0, 3)
 __version__ = '.'.join(map(str, VERSION[0:3])) + ''.join(VERSION[3:])
@@ -11,10 +14,6 @@ __docformat__ = 'restructuredtext en'
 
 # -eof meta-
 
-import sys
-# Lazy loading.
-# - See werkzeug/__init__.py for the rationale behind this.
-from types import ModuleType
 
 all_by_module = {
     'cell.actors': ['Actor'],

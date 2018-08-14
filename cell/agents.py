@@ -1,7 +1,5 @@
 """cell.agents"""
 
-from __future__ import absolute_import
-
 from inspect import isclass
 from operator import itemgetter
 import weakref

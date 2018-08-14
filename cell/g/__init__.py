@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from kombu.five import keys
 from kombu.syn import detect_environment
 

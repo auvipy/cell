@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from kombu.common import uuid
 
 from cell.results import AsyncResult

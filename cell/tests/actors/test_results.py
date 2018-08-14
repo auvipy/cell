@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from mock import ANY, patch
 from cell.actors import Actor
 from cell.agents import dAgent
