@@ -23,11 +23,11 @@ class Group(Actor):
 
     """
     def __init__(self, act_type, number, **kwargs):
-        super(Group, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.state.act_type = act_type
         self.state.number = number
 
-    class state(object):
+    class state:
         def config(self, act_type, number):
             agent = dAgent(self.actor.connection)
 

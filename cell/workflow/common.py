@@ -3,7 +3,7 @@ from collections import deque
 from .monads import callcc, done, ContinuationMonad, do
 
 
-class Mailbox(object):
+class Mailbox:
 
     def __init__(self, name=None):
         self.name = name

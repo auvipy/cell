@@ -7,7 +7,7 @@ from kombu.five import Queue
 # ##### Base Monad and @do syntax #########
 
 
-class Monad(object):
+class Monad:
 
     def bind(self, fun):
         raise NotImplementedError('bind')
@@ -206,7 +206,7 @@ def callcc(usecc):
     )
 
 
-class AgentRole(object):
+class AgentRole:
 
     def receive(self, sender):
         yield self.receiver.receive()

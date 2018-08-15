@@ -9,8 +9,8 @@ env:
 
 matrix:
   include:
-    - python: 2.7
-      env: TOXENV=2.7
+    - python: 3.7
+      env: TOXENV=3.7
     - python: 3.6
       env: TOXENV=3.6
 
