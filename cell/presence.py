@@ -230,7 +230,7 @@ class AwareAgent(Agent):
         return Presence(self, on_awake=self.on_awake)
 
 
-class AwareActorMixin(object):
+class AwareActorMixin:
     meta_lookup_section = None
 
     def lookup(self, value):

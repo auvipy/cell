@@ -1,6 +1,4 @@
 """cell.result"""
-from __future__ import absolute_import
-
 from kombu.pools import producers
 
 from .exceptions import CellError, NoReplyError
@@ -8,7 +6,7 @@ from .exceptions import CellError, NoReplyError
 __all__ = ['AsyncResult']
 
 
-class AsyncResult(object):
+class AsyncResult:
     Error = CellError
     NoReplyError = NoReplyError
 

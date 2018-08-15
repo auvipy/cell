@@ -8,7 +8,7 @@ from .monads import mreturn, MonadReturn
 __all__ = ['Workflow']
 
 
-class Workflow(object):
+class Workflow:
 
     def __init__(self, protocol, id=None):
         self._wf_table = {}

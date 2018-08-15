@@ -33,7 +33,7 @@ ACTOR_TYPE = enum(
 )
 
 
-class Actor(object):
+class Actor:
     AsyncResult = AsyncResult
 
     Error = exceptions.CellError
@@ -123,7 +123,7 @@ class Actor(object):
     meta = {}
     consumer = None
 
-    class state(object):
+    class state:
         """Placeholder class for actor's supported methods."""
         pass
 
@@ -631,7 +631,7 @@ j
             return self.id
 
 
-class ActorProxy(object):
+class ActorProxy:
     """An actor wrapper that represents an actor started remotely.
 
         ActroProxy is created as a result of spawning an Actor.
@@ -661,7 +661,7 @@ class ActorProxy(object):
         self.id = self._actor.id
         self.async_start_result = async_start_result
 
-    class state(object):
+    class state:
         def __init__(self, parent, id, func):
             self.parent = parent
             self.id = id

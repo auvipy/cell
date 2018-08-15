@@ -23,7 +23,7 @@ class dAgent(Actor):
     types = (ACTOR_TYPE.RR, ACTOR_TYPE.SCATTER, ACTOR_TYPE.DIRECT)
     MAX_ACTORS = 2
 
-    class state(object):
+    class state:
         def __init__(self):
             self.registry = {}
 
@@ -210,7 +210,7 @@ class Agent(ConsumerMixin):
         self.info('Agent on behalf of [%s] starting...',
                   ', '.join(actor.name for actor in self.actors))
         self.on_run()
-        super(Agent, self).run()
+        super().run()
 
     def stop(self):
         pass
