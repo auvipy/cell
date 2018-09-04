@@ -2,7 +2,7 @@ import types
 
 from collections import deque
 from functools import wraps
-from kombu.five import Queue
+from queue import Queue
 
 # ##### Base Monad and @do syntax #########
 
@@ -218,7 +218,7 @@ class AgentRole:
         self.roles.append(mailbox)
 
 
-class Mailbox(object):
+class Mailbox:
 
     def __init__(self):
         self.messages = deque()
@@ -262,7 +262,7 @@ class RemoteMailbox(Mailbox):
         self.queue = Queue()
         self._recv_name = name
         self._recv_binding = binding
-        super(RemoteMailbox, self).__init__()
+        super().__init__()
 
 
 if __name__ == "__main__":
