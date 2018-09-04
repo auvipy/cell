@@ -20,7 +20,7 @@ class ModelConsumer(Consumer):
         self.exchange = exchange
         self.prepare_signals(kwargs.pop('sigmap', None))
         queues = self.sync_queues(kwargs.pop('queues', []))
-        super(ModelConsumer, self).__init__(channel, queues, *args, **kwargs)
+        super().__init__(channel, queues, *args, **kwargs)
 
     def prepare_signals(self, sigmap=None):
         for callback, connect in items(sigmap or {}):
@@ -77,7 +77,7 @@ class ModelActor(Actor):
         if not name or self.name:
             name = self.model.__name__
 
-        super(ModelActor, self).__init__(connection, id, name, *args, **kwargs)
+        super().__init__(connection, id, name, *args, **kwargs)
 
     def Consumer(self, channel, **kwargs):
         return ModelConsumer(channel, self.exchange,
